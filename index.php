@@ -3,10 +3,15 @@
 declare(strict_types = 1);
 require __DIR__ . '/vendor/autoload.php';
 
+
 use Api\Services\ErrorHandler;
 use Api\Controllers\RegisterController;
 use Api\Database\Database;
 use Api\Gateways\UserGateway;
+
+use Api\Controllers\LoginController;
+use Api\Services\JWTCodec;
+
 
 header('Content-type: application/json; charset=UTF-8');
 set_error_handler([ErrorHandler::class, 'handleError']);
@@ -22,25 +27,31 @@ $resource_id = $parts[3] ?? null;
 
 
 if ($resource === 'register') {
-  $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
+    $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
 
-  $user_gateway = new UserGateway($database);
-  $register_controller = new RegisterController($user_gateway);
-  $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
+    $user_gateway = new UserGateway($database);
+    $register_controller = new RegisterController($user_gateway);
+    $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
 
-  exit;
+    exit;
 } 
 else if ($resource === 'login') {
-  echo 'login';
-  exit;
+    $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
+    $user_gateway = new UserGateway($database);
+    $codec = new JWTCodec($_ENV['SECRET_KEY']);
+
+    $login_controller = new LoginController($user_gateway, $codec);
+    $login_controller->processRequest($_SERVER['REQUEST_METHOD']);
+
+    exit;
 } 
 else if ($resource === 'logout') {
-  echo 'logout';
-  exit;
+    echo 'logout';
+    exit;
 }
 else if ($resource === 'refresh') {
-  echo 'refresh';
-  exit;
+    echo 'refresh';
+    exit;
 }
 
 
