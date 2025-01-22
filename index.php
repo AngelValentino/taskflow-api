@@ -4,6 +4,9 @@ declare(strict_types = 1);
 require __DIR__ . '/vendor/autoload.php';
 
 use Api\Services\ErrorHandler;
+use Api\Controllers\RegisterController;
+use Api\Database\Database;
+use Api\Gateways\UserGateway;
 
 header('Content-type: application/json; charset=UTF-8');
 set_error_handler([ErrorHandler::class, 'handleError']);
@@ -19,8 +22,11 @@ $resource_id = $parts[3] ?? null;
 
 
 if ($resource === 'register') {
+  $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
 
-  echo 'register';
+  $user_gateway = new UserGateway($database);
+  $register_controller = new RegisterController($user_gateway);
+  $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
 
   exit;
 } 
