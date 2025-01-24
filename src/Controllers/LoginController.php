@@ -2,12 +2,14 @@
 
 namespace Api\Controllers;
 
+use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\UserGateway;
 use Api\Services\JWTCodec;
 
 class LoginController {
     public function __construct(
         private UserGateway $gateway,
+        private RefreshTokenGateway $refresh_token_gateway,
         private JWTCodec $codec
     ) {
         
@@ -47,6 +49,10 @@ class LoginController {
                 'exp' => $refresh_token_expiry
             ]);
 
+            // Store the refresh token in the db
+            $this->refresh_token_gateway->create($refresh_token, $refresh_token_expiry);
+
+            // Send JSON
             echo json_encode([
                 'access_token' => $access_token,
                 'refresh_token' => $refresh_token

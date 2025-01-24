@@ -12,7 +12,7 @@ class UserGateway {
         $this->conn = $database->getConnection();
     }
 
-    public function createUser(string $username, string $email, string $password): void {
+    public function create(string $username, string $email, string $password): void {
         $sql = "INSERT INTO users (username, email, password_hash)
                 VALUES (:username, :email, :password_hash)";
         
@@ -35,6 +35,17 @@ class UserGateway {
         $stmt->bindValue(':username', $username, PDO::PARAM_STR);
         $stmt->execute();
 
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getById(int $id): array | false {
+        $sql = "SELECT * FROM 
+                users WHERE id = :id";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':id', $id, PDO::PARAM_STR);
+        $stmt->execute();
+        
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }

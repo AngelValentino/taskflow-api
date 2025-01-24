@@ -20,7 +20,7 @@ class RegisterController {
                 return;
             }
 
-            $this->gateway->createUser($_POST['username'], $_POST['email'], $_POST['password']);
+            $this->gateway->create($_POST['username'], $_POST['email'], $_POST['password']);
         } 
         else {
             $this->respondMethodNotAllowed('POST');
