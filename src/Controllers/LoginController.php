@@ -8,9 +8,9 @@ use Api\Services\JWTCodec;
 
 class LoginController {
     public function __construct(
+        private JWTCodec $codec,
         private UserGateway $gateway,
         private RefreshTokenGateway $refresh_token_gateway,
-        private JWTCodec $codec
     ) {
         
     }

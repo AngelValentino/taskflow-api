@@ -2,20 +2,20 @@
 
 namespace Api\Controllers;
 
-use Exception;
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\UserGateway;
+use Exception;
 use Api\Services\JWTCodec;
 use Api\Services\InvalidSignatureException;
 use Api\Services\TokenExpiredException;
 
-class RefreshTokenController {
+class LogoutController {
     public function __construct(
         private JWTCodec $codec,
-        private RefreshTokenGateway $gateway,
-        private UserGateway $user_gateway
+        private UserGateway $user_gateway,
+        private RefreshTokenGateway $refresh_token_gateway
     ) {
-
+        
     }
 
     public function processRequest(string $method): void {
@@ -48,14 +48,12 @@ class RefreshTokenController {
 
             $user_id = $payload['sub'];
 
-            $refresh_token = $this->gateway->getByToken($data['token']);
+            $refresh_token = $this->refresh_token_gateway->getByToken($data['token']);
 
             if ($refresh_token === false) {
                 $this->respondBadRequest('Invalid token(not on whitelist).');
                 return;
             }
-
-            // validate user info
 
             $user = $this->user_gateway->getById($user_id);
 
@@ -64,34 +62,10 @@ class RefreshTokenController {
                 return;
             }
 
-            // Regenerate access and refresh token
-            $payload = [
-                'sub' => $user['id'],
-                'username' => $user['username'],
-                'exp' => time() + 300 # 5 minutes
-            ];
-
-            $access_token = $this->codec->encode($payload);
-
-            $refresh_token_expiry = time() + 432000; # 5 days
-            $refresh_token = $this->codec->encode([
-                'sub' => $user['id'],
-                'exp' => $refresh_token_expiry
-            ]);
-
-            // Update db with the newly created refresh token
-            $this->gateway->delete($data['token']);
-            $this->gateway->create($refresh_token, $refresh_token_expiry);
-
-            // Send JSON
-            echo json_encode([
-                'access_token' => $access_token,
-                'refresh_token' => $refresh_token
-            ]);
-        } 
+            $this->refresh_token_gateway->delete($data['token']);
+        }
         else {
             $this->respondMethodNotAllowed('POST');
-            return;
         }
     }
 
@@ -104,7 +78,7 @@ class RefreshTokenController {
         http_response_code(401);
         echo json_encode(['message' => 'Invalid authentication.']);
     }
-    
+
     private function respondMethodNotAllowed(string $allowed_methods): void {
         http_response_code(405);
         header("Allow: $allowed_methods");

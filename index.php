@@ -12,6 +12,8 @@ use Api\Gateways\UserGateway;
 use Api\Controllers\LoginController;
 use Api\Services\JWTCodec;
 
+use Api\Controllers\LogoutController;
+
 use Api\Controllers\RefreshTokenController;
 use Api\Gateways\RefreshTokenGateway;
 
@@ -31,8 +33,8 @@ $resource_id = $parts[3] ?? null;
 
 if ($resource === 'register') {
     $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
-
     $user_gateway = new UserGateway($database);
+
     $register_controller = new RegisterController($user_gateway);
     $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
 
@@ -44,14 +46,19 @@ else if ($resource === 'login') {
     $refresh_token_gateway = new RefreshTokenGateway($database, $_ENV['SECRET_KEY']);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
 
-    $login_controller = new LoginController($user_gateway, $refresh_token_gateway, $codec);
+    $login_controller = new LoginController($codec, $user_gateway, $refresh_token_gateway);
     $login_controller->processRequest($_SERVER['REQUEST_METHOD']);
 
     exit;
 } 
 else if ($resource === 'logout') {
-    
-    
+    $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
+    $refresh_token_gateway = new RefreshTokenGateway($database, $_ENV['SECRET_KEY']);
+    $user_gateway = new UserGateway($database);
+    $codec = new JWTCodec($_ENV['SECRET_KEY']);
+
+    $logout_controller = new LogoutController($codec, $user_gateway, $refresh_token_gateway);
+    $logout_controller->processRequest($_SERVER['REQUEST_METHOD']);
 
     exit;
 }
@@ -61,7 +68,7 @@ else if ($resource === 'refresh') {
     $user_gateway = new UserGateway($database);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
 
-    $refresh_token_controller = new RefreshTokenController($refresh_token_gateway, $user_gateway, $codec);
+    $refresh_token_controller = new RefreshTokenController($codec, $refresh_token_gateway, $user_gateway);
     $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
 
     exit;
