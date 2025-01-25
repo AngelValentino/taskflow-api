@@ -17,6 +17,10 @@ use Api\Controllers\LogoutController;
 use Api\Controllers\RefreshTokenController;
 use Api\Gateways\RefreshTokenGateway;
 
+use Api\Services\Auth;
+use Api\Gateways\TaskGateway;
+use Api\Controllers\TaskController;
+
 
 header('Content-type: application/json; charset=UTF-8');
 set_error_handler([ErrorHandler::class, 'handleError']);
@@ -70,6 +74,21 @@ else if ($resource === 'refresh') {
 
     $refresh_token_controller = new RefreshTokenController($codec, $refresh_token_gateway, $user_gateway);
     $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
+
+    exit;
+}
+else if ($resource === 'tasks') {
+    $codec = new JWTCodec($_ENV['SECRET_KEY']);
+    $auth = new Auth($codec);
+
+    if (!$auth->authenticateAccessToken()) exit;
+    $user_id = $auth->getUserId();
+
+    $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
+    $task_gateway = new TaskGateway($database);
+    $task_controller = new TaskController($task_gateway, $user_id);
+    
+    $task_controller->processRequest($_SERVER['REQUEST_METHOD'], $resource_id);
 
     exit;
 }
