@@ -4,13 +4,13 @@ namespace Api\Controllers;
 
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\UserGateway;
-use Api\Services\JWTCodec;
+use Api\Services\Auth;
 
 class LoginController {
     public function __construct(
-        private JWTCodec $codec,
         private UserGateway $gateway,
         private RefreshTokenGateway $refresh_token_gateway,
+        private Auth $auth
     ) {
         
     }
@@ -34,28 +34,15 @@ class LoginController {
             }
 
             // Genereate access and refresh token
-
-            $payload = [
-                'sub' => $user['id'],
-                'username' => $user['username'],
-                'exp' => time() + 300 # 5 minutes
-            ];
-
-            $access_token = $this->codec->encode($payload);
-
-            $refresh_token_expiry = time() + 432000; # 5 days
-            $refresh_token = $this->codec->encode([
-                'sub' => $user['id'],
-                'exp' => $refresh_token_expiry
-            ]);
+            $access_token = $this->auth->getAccessToken($user);
 
             // Store the refresh token in the db
-            $this->refresh_token_gateway->create($refresh_token, $refresh_token_expiry);
+            $this->refresh_token_gateway->create($access_token['refresh_token'], $access_token['refresh_token_expiry']);
 
             // Send JSON
             echo json_encode([
-                'access_token' => $access_token,
-                'refresh_token' => $refresh_token
+                'access_token' => $access_token['access_token'],
+                'refresh_token' => $access_token['refresh_token']
             ]);
         } 
         else {

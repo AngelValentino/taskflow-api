@@ -2,18 +2,15 @@
 
 namespace Api\Controllers;
 
-use Exception;
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\UserGateway;
-use Api\Services\JWTCodec;
-use Api\Services\InvalidSignatureException;
-use Api\Services\TokenExpiredException;
+use Api\Services\Auth;
 
 class RefreshTokenController {
     public function __construct(
-        private JWTCodec $codec,
+        private UserGateway $user_gateway,
         private RefreshTokenGateway $gateway,
-        private UserGateway $user_gateway
+        private Auth $auth
     ) {
 
     }
@@ -27,26 +24,8 @@ class RefreshTokenController {
                 return;
             }
 
-            try {
-                $payload = $this->codec->decode($data['token']);
-            }    
-            catch (InvalidSignatureException) {
-                http_response_code(401);
-                echo json_encode(['message' => 'invalid signature']);
-                return;
-            }
-            catch (TokenExpiredException) {
-                http_response_code(401);
-                echo json_encode(['message' => 'token has expired']);
-                return;
-            }
-            catch (Exception $e) {
-                http_response_code(400);
-                echo json_encode(['message' => $e->getMessage()]);
-                return;
-            }
-
-            $user_id = $payload['sub'];
+            if (!$this->auth->authenticateAccessToken(false, $data['token'])) return;
+            $user_id = $this->auth->getUserId();
 
             $refresh_token = $this->gateway->getByToken($data['token']);
 
@@ -65,28 +44,16 @@ class RefreshTokenController {
             }
 
             // Regenerate access and refresh token
-            $payload = [
-                'sub' => $user['id'],
-                'username' => $user['username'],
-                'exp' => time() + 300 # 5 minutes
-            ];
-
-            $access_token = $this->codec->encode($payload);
-
-            $refresh_token_expiry = time() + 432000; # 5 days
-            $refresh_token = $this->codec->encode([
-                'sub' => $user['id'],
-                'exp' => $refresh_token_expiry
-            ]);
+            $access_token = $this->auth->getAccessToken($user);
 
             // Update db with the newly created refresh token
             $this->gateway->delete($data['token']);
-            $this->gateway->create($refresh_token, $refresh_token_expiry);
+            $this->gateway->create($access_token['refresh_token'], $access_token['refresh_token_expiry']);
 
             // Send JSON
             echo json_encode([
-                'access_token' => $access_token,
-                'refresh_token' => $refresh_token
+                'access_token' => $access_token['access_token'],
+                'refresh_token' => $access_token['refresh_token']
             ]);
         } 
         else {

@@ -4,16 +4,13 @@ namespace Api\Controllers;
 
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\UserGateway;
-use Exception;
-use Api\Services\JWTCodec;
-use Api\Services\InvalidSignatureException;
-use Api\Services\TokenExpiredException;
+use Api\Services\Auth;
 
 class LogoutController {
     public function __construct(
-        private JWTCodec $codec,
         private UserGateway $user_gateway,
-        private RefreshTokenGateway $refresh_token_gateway
+        private RefreshTokenGateway $refresh_token_gateway,
+        private Auth $auth
     ) {
         
     }
@@ -27,26 +24,8 @@ class LogoutController {
                 return;
             }
 
-            try {
-                $payload = $this->codec->decode($data['token']);
-            }    
-            catch (InvalidSignatureException) {
-                http_response_code(401);
-                echo json_encode(['message' => 'invalid signature']);
-                return;
-            }
-            catch (TokenExpiredException) {
-                http_response_code(401);
-                echo json_encode(['message' => 'token has expired']);
-                return;
-            }
-            catch (Exception $e) {
-                http_response_code(400);
-                echo json_encode(['message' => $e->getMessage()]);
-                return;
-            }
-
-            $user_id = $payload['sub'];
+            if (!$this->auth->authenticateAccessToken(false, $data['token'])) return;
+            $user_id = $this->auth->getUserId();
 
             $refresh_token = $this->refresh_token_gateway->getByToken($data['token']);
 

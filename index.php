@@ -28,45 +28,51 @@ $parts = explode('/', $path);
 $resource = $parts[2];
 $resource_id = $parts[3] ?? null;
 
+function getDbInstance(): Database {
+    return new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
+}
+
+function getUserAuthServices(): array {
+    $database = getDbInstance();
+    
+    $user_gateway = new UserGateway($database);
+    $refresh_token_gateway = new RefreshTokenGateway($database, $_ENV['SECRET_KEY']);
+    $codec = new JWTCodec($_ENV['SECRET_KEY']);
+    $auth = new Auth($codec);
+    
+    return [
+        'user_gateway' => $user_gateway,
+        'refresh_token_gateway' => $refresh_token_gateway,
+        'auth' => $auth,
+    ];
+}
+
 switch ($resource) {
     case 'register':
-        $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
+        $database = getDbInstance();
         $user_gateway = new UserGateway($database);
-    
         $register_controller = new RegisterController($user_gateway);
         $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
 
         break;
 
     case 'login':
-        $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
-        $user_gateway = new UserGateway($database);
-        $refresh_token_gateway = new RefreshTokenGateway($database, $_ENV['SECRET_KEY']);
-        $codec = new JWTCodec($_ENV['SECRET_KEY']);
-
-        $login_controller = new LoginController($codec, $user_gateway, $refresh_token_gateway);
+        $auth_services = getUserAuthServices();
+        $login_controller = new LoginController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
         $login_controller->processRequest($_SERVER['REQUEST_METHOD']);
         
         break;
 
-    case 'logout':
-        $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
-        $refresh_token_gateway = new RefreshTokenGateway($database, $_ENV['SECRET_KEY']);
-        $user_gateway = new UserGateway($database);
-        $codec = new JWTCodec($_ENV['SECRET_KEY']);
-    
-        $logout_controller = new LogoutController($codec, $user_gateway, $refresh_token_gateway);
+    case 'logout':        
+        $auth_services = getUserAuthServices();
+        $logout_controller = new LogoutController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
         $logout_controller->processRequest($_SERVER['REQUEST_METHOD']);
     
         break;
 
     case 'refresh':
-        $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
-        $refresh_token_gateway = new RefreshTokenGateway($database, $_ENV['SECRET_KEY']);
-        $user_gateway = new UserGateway($database);
-        $codec = new JWTCodec($_ENV['SECRET_KEY']);
-    
-        $refresh_token_controller = new RefreshTokenController($codec, $refresh_token_gateway, $user_gateway);
+        $auth_services = getUserAuthServices();
+        $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
         $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
         
         break;
@@ -75,18 +81,21 @@ switch ($resource) {
         $codec = new JWTCodec($_ENV['SECRET_KEY']);
         $auth = new Auth($codec);
     
-        if (!$auth->authenticateAccessToken()) exit;
+        if (!$auth->authenticateAccessToken(true)) exit;
         $user_id = $auth->getUserId();
     
-        $database = new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
+        $database = getDbInstance();
         $task_gateway = new TaskGateway($database);
         $task_controller = new TaskController($task_gateway, $user_id);
-        
         $task_controller->processRequest($_SERVER['REQUEST_METHOD'], $resource_id);
 
         break;
 
+    case 'quotes':
+        echo json_encode(['message' => 'Endpoint under construction.']);
+        break;
+
     default:
         http_response_code(404);
-        echo json_encode(["error" => "Resource not found."]);
+        echo json_encode(['error' => 'Resource not found.']);
 }
