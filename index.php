@@ -16,9 +16,19 @@ use Api\Gateways\UserGateway;
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\TaskGateway;
 
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS'); // Methods allowed for the API
+header('Access-Control-Allow-Headers: Content-Type, Authorization'); // Headers allowed in the request
 header('Content-type: application/json; charset=UTF-8');
+
 set_error_handler([ErrorHandler::class, 'handleError']);
 set_exception_handler([ErrorHandler::class, 'handleException']);
+
+// Handle preflight requests (OPTIONS)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200); // Return a 200 OK response for OPTIONS
+    exit; // Exit early to avoid further processing
+}
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
@@ -97,5 +107,4 @@ switch ($resource) {
 
     default:
         http_response_code(404);
-        echo json_encode(['message' => 'Resource not found.']);
 }
