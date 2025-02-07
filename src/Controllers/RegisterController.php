@@ -21,6 +21,9 @@ class RegisterController {
             }
 
             $this->gateway->create($_POST['username'], $_POST['email'], $_POST['password']);
+            
+            http_response_code(201);
+            echo json_encode(['message' => 'User created successfully']);
         } 
         else {
             $this->respondMethodNotAllowed('POST');
@@ -44,6 +47,9 @@ class RegisterController {
         else if (strlen($username) > 32) {
             return 'Username must be less than or equal 32 characters.';
         }
+        else if ($this->gateway->getByUsername($username)) {
+            return 'Username is already taken, please try another one.';
+        }
         else {
             return null;
         }
@@ -51,7 +57,7 @@ class RegisterController {
 
     private function getEmailValidationErrors(string $email): ?string {
         if (empty($email)) {
-            return 'Email is required';
+            return 'Email is required.';
         } 
         else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return 'Email is not valid.';
@@ -59,14 +65,17 @@ class RegisterController {
         else if (strlen($email) > 255) {
            return 'Email must be less than or equal 255 characters.';
         }
+        else if ($this->gateway->getByEmail($email)) {
+            return 'Email is already taken, please try another one.';
+        }
         else {
             return null;
         }
     }
 
-    private function getPasswordValidationErrors(string $password): ?string {
+    private function getPasswordValidationErrors(string $password, string $repeatedPassword): ?string {
         if (empty($password)) {
-            return 'Password is required';
+            return 'Password is required.';
         }
         else if (strlen($password) < 8) {
             return 'Password must be at least 8 characters.';
@@ -74,6 +83,9 @@ class RegisterController {
         else if (strlen($password) > 255) {
             return 'Password must be less than or equal 255 characters.';
         } 
+        else if ($password !== $repeatedPassword) {
+            return 'Passwords do not match.';
+        }
         else {
             return null;
         }
@@ -83,7 +95,7 @@ class RegisterController {
         $errors = [
             'username' => $this->getUsernameValidationErrors($data['username']),
             'email' => $this->getEmailValidationErrors($data['email']),
-            'password' => $this->getPasswordValidationErrors($data['password'])
+            'password' => $this->getPasswordValidationErrors($data['password'], $data['repeated-password'])
         ];
 
         return array_filter($errors);

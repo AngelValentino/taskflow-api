@@ -48,4 +48,15 @@ class UserGateway {
         
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function getByEmail(string $email): array | false {
+        $sql = "SELECT * FROM
+                users WHERE email = :email";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindValue(':email', $email, PDO::PARAM_STR);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 }
