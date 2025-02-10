@@ -13,14 +13,16 @@ class RegisterController {
 
     public function processRequest(string $method): void {
         if ($method === 'POST') {
-            $errors = $this->getValidationErrors($_POST);
+            $data = (array) json_decode(file_get_contents('php://input'), true);
+
+            $errors = $this->getValidationErrors($data);
 
             if (!empty($errors)) {
                 $this->respondUnprocessableEntity($errors);
                 return;
             }
 
-            $this->gateway->create($_POST['username'], $_POST['email'], $_POST['password']);
+            $this->gateway->create($data['username'], $data['email'], $data['password']);
             
             http_response_code(201);
             echo json_encode(['message' => 'User created successfully']);
