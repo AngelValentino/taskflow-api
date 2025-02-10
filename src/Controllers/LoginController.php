@@ -19,13 +19,13 @@ class LoginController {
         if ($method === 'POST') {
             $data = (array) json_decode(file_get_contents('php://input'), true);
 
-            if (empty($data['username']) || empty($data['password'])) {
+            if (empty($data['email']) || empty($data['password'])) {
                 http_response_code(400);
                 echo json_encode(['message' => 'Missing login credentials.']);
                 return;
             }
     
-            $user = $this->gateway->getByUsername($data['username']);
+            $user = $this->gateway->getByEmail($data['email']);
             $error = $this->getUserValidationErrorMessage($data, $user);
 
             if (isset($error)) {
@@ -42,7 +42,8 @@ class LoginController {
             // Send JSON
             echo json_encode([
                 'access_token' => $access_token['access_token'],
-                'refresh_token' => $access_token['refresh_token']
+                'refresh_token' => $access_token['refresh_token'],
+                'username' => $user['username']
             ]);
         } 
         else {
@@ -62,11 +63,11 @@ class LoginController {
 
     private function getUserValidationErrorMessage(array $data, array | false $user): ?string {
         if ($user === false) {
-            return 'User does not exist';
+            return 'User does not exist.';
         }
 
         if (!password_verify($data['password'], $user['password_hash'])) {
-            return 'Invalid password';
+            return 'Invalid password.';
         }
 
         return null;
