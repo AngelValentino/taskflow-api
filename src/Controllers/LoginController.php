@@ -43,7 +43,7 @@ class LoginController {
             echo json_encode([
                 'access_token' => $access_token['access_token'],
                 'refresh_token' => $access_token['refresh_token'],
-                'username' => $user['username']
+                'username' => htmlspecialchars($user['username'])
             ]);
         } 
         else {

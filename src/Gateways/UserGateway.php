@@ -18,7 +18,8 @@ class UserGateway {
         
         $stmt = $this->conn->prepare($sql);
 
-        $password_hash = password_hash($password, PASSWORD_BCRYPT);
+        $options = ['cost' => 12];
+        $password_hash = password_hash($password, PASSWORD_BCRYPT, $options);
 
         $stmt->bindValue(':username', $username, PDO::PARAM_STR);
         $stmt->bindValue(':email', $email, PDO::PARAM_STR);
