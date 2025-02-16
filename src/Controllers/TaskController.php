@@ -3,6 +3,7 @@
 namespace Api\Controllers;
 
 use Api\Gateways\TaskGateway;
+use DateTime;
 
 class TaskController {
     public function __construct(
@@ -19,6 +20,12 @@ class TaskController {
             } 
             else if ($method === 'POST') {
                 $data = (array) json_decode(file_get_contents('php://input'), true);
+                
+                // Trim inputs
+                $data['title'] = trim($data['title'] ?? '');
+                $data['due_date'] = trim($data['due_date'] ?? '');
+                $data['description'] = trim($data['description'] ?? '');
+
                 $errors = $this->getValidationErrors($data);
                
                 if (!empty($errors)) {
@@ -47,6 +54,12 @@ class TaskController {
                     break;
                 case 'PATCH':
                     $data = (array) json_decode(file_get_contents('php://input'), true);
+
+                    // Trim inputs
+                    $data['title'] = trim($data['title'] ?? '');
+                    $data['due_date'] = trim($data['due_date'] ?? '');
+                    $data['description'] = trim($data['description'] ?? '');
+
                     $errors = $this->getValidationErrors($data);
                    
                     if (!empty($errors)) {
@@ -87,6 +100,11 @@ class TaskController {
         echo json_encode(['message' => 'Task Created', 'id' => $id]);
     }
 
+    private function validateDueDate(string $due_date): bool {
+        $date = DateTime::createFromFormat('Y-m-d', $due_date);
+        return $date && $date->format('Y-m-d') === $due_date;
+    }
+
     private function getValidationErrors(array $data): array {
         $errors = [];
 
@@ -94,13 +112,19 @@ class TaskController {
         if (empty($data['title'])) {
             $errors['title'] = 'Title field is required';
         }
+        else if (strlen($data['title']) > 75) {
+            $errors['title'] = 'Title must be less than or equal 75 characters.';
+        }
 
         if (empty($data['due_date'])) {
             $errors['due_date'] = 'Due date field is required';
         }
+        else if (!$this->validateDueDate($data['due_date'])) {
+            $errors['due_date'] = 'Due date must be in YYYY-MM-DD format and also be valid.';
+        }
 
-        if (empty($data['description'])) {
-            $errors['description'] = 'Description field is required';
+        if (!empty($data['description']) && strlen($data['description']) > 500) {
+            $errors['description'] = 'Description must be less than or equal 500 characters.';
         }
 
         return $errors;

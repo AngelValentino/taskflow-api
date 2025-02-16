@@ -20,7 +20,7 @@ class Auth {
     public function authenticateAccessToken(bool $header = false, string $token = null): bool {
         if (!preg_match("/^Bearer\s+(.*)$/", $_SERVER['HTTP_AUTHORIZATION'], $matches) && $header === true) {
             http_response_code(400);
-            echo json_encode(['message' => 'Incomplete authorization header']);
+            echo json_encode(['message' => 'Incomplete authorization header.']);
             return false;
         }
 
@@ -29,12 +29,12 @@ class Auth {
         } 
         catch (InvalidSignatureException) {
             http_response_code(401);
-            echo json_encode(['message' => 'invalid signature']);
+            echo json_encode(['message' => 'Invalid signature.']);
             return false;
         }
         catch (TokenExpiredException) {
             http_response_code(401);
-            echo json_encode(['message' => 'token has expired']);
+            echo json_encode(['message' => 'Token has expired.']);
             return false;
         }
         catch (Exception $e) {

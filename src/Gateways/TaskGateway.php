@@ -49,6 +49,8 @@ class TaskGateway {
     }
 
     public function createForUser(int $user_id, array $data): string {
+        $description = !empty($data['description']) ? $data['description'] : null;
+        
         $sql = "INSERT INTO tasks (user_id, title, due_date, `description`, `is_completed`) 
                 VALUES (:user_id, :title, :due_date, :description, :is_completed)";
     
@@ -56,7 +58,7 @@ class TaskGateway {
         $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
         $stmt->bindValue(':title', $data['title'], PDO::PARAM_STR);
         $stmt->bindValue(':due_date', $data['due_date'], PDO::PARAM_STR);
-        $stmt->bindValue(':description', $data['description'], PDO::PARAM_STR);
+        $stmt->bindValue(':description', $description, $description === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindValue(':is_completed', $data['is_completed'] ?? false, PDO::PARAM_BOOL);
         $stmt->execute();
 

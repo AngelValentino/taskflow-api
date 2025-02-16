@@ -53,7 +53,8 @@ class RefreshTokenController {
             // Send JSON
             echo json_encode([
                 'access_token' => $access_token['access_token'],
-                'refresh_token' => $access_token['refresh_token']
+                'refresh_token' => $access_token['refresh_token'],
+                'username' => htmlspecialchars($user['username'])
             ]);
         } 
         else {

@@ -97,7 +97,7 @@ class RegisterController {
         $errors = [
             'username' => $this->getUsernameValidationErrors($data['username']),
             'email' => $this->getEmailValidationErrors($data['email']),
-            'password' => $this->getPasswordValidationErrors($data['password'], $data['repeated-password'])
+            'password' => $this->getPasswordValidationErrors($data['password'], $data['repeated_password'])
         ];
 
         return array_filter($errors);
