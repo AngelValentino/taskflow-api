@@ -12,9 +12,13 @@ class TaskGateway {
         $this->conn = $database->getConnection();
     }
 
-    public function getAllForUser(int $user_id): array {
+    public function getAllForUser(int $user_id, ?string $sort_by_column = null, string $order = 'ASC'): array {
         $sql = "SELECT * FROM tasks
                 WHERE user_id = :user_id";
+
+        if ($sort_by_column) {
+            $sql .= " ORDER BY $sort_by_column $order";
+        }
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);

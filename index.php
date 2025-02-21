@@ -15,6 +15,7 @@ use Api\Controllers\RefreshTokenController;
 use Api\Gateways\UserGateway;
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\TaskGateway;
+use Api\Services\Router;
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS'); // Methods allowed for the API
@@ -34,9 +35,7 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$parts = explode('/', $path);
-$resource = $parts[2];
-$resource_id = $parts[3] ?? null;
+$router = new Router;
 
 function getDbInstance(): Database {
     return new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
@@ -57,54 +56,59 @@ function getUserAuthServices(): array {
     ];
 }
 
-switch ($resource) {
-    case 'register':
-        $database = getDbInstance();
-        $user_gateway = new UserGateway($database);
-        $register_controller = new RegisterController($user_gateway);
-        $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
+$router->add('/register', function() {
+    $database = getDbInstance();
+    $user_gateway = new UserGateway($database);
+    $register_controller = new RegisterController($user_gateway);
+    $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
+});
 
-        break;
+$router->add('/login', function() {
+    $auth_services = getUserAuthServices();
+    $login_controller = new LoginController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
+    $login_controller->processRequest($_SERVER['REQUEST_METHOD']);
+});
 
-    case 'login':
-        $auth_services = getUserAuthServices();
-        $login_controller = new LoginController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
-        $login_controller->processRequest($_SERVER['REQUEST_METHOD']);
-        
-        break;
+$router->add('/logout', function() {
+    $auth_services = getUserAuthServices();
+    $logout_controller = new LogoutController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
+    $logout_controller->processRequest($_SERVER['REQUEST_METHOD']);
+});
 
-    case 'logout':        
-        $auth_services = getUserAuthServices();
-        $logout_controller = new LogoutController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
-        $logout_controller->processRequest($_SERVER['REQUEST_METHOD']);
-    
-        break;
+$router->add('/refresh', function() {
+    $auth_services = getUserAuthServices();
+    $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
+    $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
+});
 
-    case 'refresh':
-        $auth_services = getUserAuthServices();
-        $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
-        $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
-        
-        break;
+$router->add('/tasks', function() {
+    $codec = new JWTCodec($_ENV['SECRET_KEY']);
+    $auth = new Auth($codec);
 
-    case 'tasks':
-        $codec = new JWTCodec($_ENV['SECRET_KEY']);
-        $auth = new Auth($codec);
-    
-        if (!$auth->authenticateAccessToken(true)) exit;
-        $user_id = $auth->getUserId();
-    
-        $database = getDbInstance();
-        $task_gateway = new TaskGateway($database);
-        $task_controller = new TaskController($task_gateway, $user_id);
-        $task_controller->processRequest($_SERVER['REQUEST_METHOD'], $resource_id);
+    if (!$auth->authenticateAccessToken(true)) exit;
+    $user_id = $auth->getUserId();
 
-        break;
+    $database = getDbInstance();
+    $task_gateway = new TaskGateway($database);
+    $task_controller = new TaskController($task_gateway, $user_id);
+    $task_controller->processRequest($_SERVER['REQUEST_METHOD'], null);
+});
 
-    case 'quotes':
-        echo json_encode(['message' => 'Endpoint under construction.']);
-        break;
+$router->add('/tasks/{id}', function($id) {
+    $codec = new JWTCodec($_ENV['SECRET_KEY']);
+    $auth = new Auth($codec);
 
-    default:
-        http_response_code(404);
-}
+    if (!$auth->authenticateAccessToken(true)) exit;
+    $user_id = $auth->getUserId();
+
+    $database = getDbInstance();
+    $task_gateway = new TaskGateway($database);
+    $task_controller = new TaskController($task_gateway, $user_id);
+    $task_controller->processRequest($_SERVER['REQUEST_METHOD'], $id);
+});
+
+$router->add('/quotes', function() {
+    echo json_encode(['message' => 'Endpoint under construction.']);
+});
+
+$router->dispatch($path);

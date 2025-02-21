@@ -16,8 +16,22 @@ class TaskController {
     public function processRequest(string $method, ?string $id): void {
         if ($id === null) {
             if ($method === 'GET') {
-                echo json_encode($this->gateway->getAllForUser($this->user_id));
-            } 
+                $whitelist_columns = ['due_date'];
+                $sort_by_column = $_GET['sort_by'] ?? null;
+                $order = strtoupper($_GET['order'] ?? 'ASC');
+
+                if ($sort_by_column && !in_array($sort_by_column, $whitelist_columns)) {
+                    $this->respondBadRequest('Invalid sort column parameter.');
+                    return;
+                }
+        
+                if ($order !== 'ASC' && $order !== 'DESC') {
+                    $this->respondBadRequest("Invalid order parameter, must be 'ASC' or 'DESC'."); 
+                    return;
+                }
+                
+                echo json_encode($this->gateway->getAllForUser($this->user_id, $sort_by_column, $order));
+            }
             else if ($method === 'POST') {
                 $data = (array) json_decode(file_get_contents('php://input'), true);
                 
@@ -93,6 +107,11 @@ class TaskController {
     private function respondNotFound(string $id): void {
         http_response_code(404);
         echo json_encode(['message' => "Task with ID $id not found"]);
+    }
+
+    private function respondBadRequest(string $message): void {
+        http_response_code(400);
+        echo json_encode(['message' => $message]);
     }
 
     private function respondCreated(string $id): void {
