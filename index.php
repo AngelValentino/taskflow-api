@@ -94,7 +94,7 @@ $router->add('/tasks', function() {
     $task_controller->processRequest($_SERVER['REQUEST_METHOD'], null);
 });
 
-$router->add('/tasks/{id}', function($id) {
+$router->add('/tasks/{id}', function($task_id) {
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
 
@@ -104,7 +104,7 @@ $router->add('/tasks/{id}', function($id) {
     $database = getDbInstance();
     $task_gateway = new TaskGateway($database);
     $task_controller = new TaskController($task_gateway, $user_id);
-    $task_controller->processRequest($_SERVER['REQUEST_METHOD'], $id);
+    $task_controller->processRequest($_SERVER['REQUEST_METHOD'], $task_id);
 });
 
 $router->add('/quotes', function() {

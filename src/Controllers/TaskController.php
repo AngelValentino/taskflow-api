@@ -13,8 +13,8 @@ class TaskController {
 
     }
 
-    public function processRequest(string $method, ?string $id): void {
-        if ($id === null) {
+    public function processRequest(string $method, ?string $task_id): void {
+        if ($task_id === null) {
             if ($method === 'GET') {
                 $whitelist_columns = ['due_date'];
                 $sort_by_column = $_GET['sort_by'] ?? null;
@@ -47,18 +47,22 @@ class TaskController {
                     return;
                 }
 
-                $id = $this->gateway->createForUser($this->user_id, $data);
-                $this->respondCreated($id);
-            } 
+                $task_id = $this->gateway->createForUser($this->user_id, $data);
+                $this->respondCreated($task_id);
+            }
+            else if ($method === 'DELETE') {
+                $this->gateway->deleteAllForUser($this->user_id);
+                http_response_code(204);
+            }
             else {
-                $this->respondMethodNotAllowed('GET, POST');
+                $this->respondMethodNotAllowed('GET, POST, DELETE');
             }
         } 
         else {
-            $task = $this->gateway->getForUser($this->user_id, $id);
+            $task = $this->gateway->getForUser($this->user_id, $task_id);
 
             if ($task === false) {
-                $this->respondNotFound($id);
+                $this->respondNotFound($task_id);
                 return;
             }
 
@@ -81,12 +85,12 @@ class TaskController {
                         return;
                     }
 
-                    $rows = $this->gateway->updateForUser($this->user_id, $id, $data);
+                    $rows = $this->gateway->updateForUser($this->user_id, $task_id, $data);
                     echo json_encode(['message' => 'Task Updated', 'rows' => $rows]);
                     break;
                 case 'DELETE':
-                    $rows = $this->gateway->deleteForUser($this->user_id, $id);
-                    echo json_encode(['message' => 'Task Deleted', 'rows' => $rows]);
+                    $this->gateway->deleteForUser($this->user_id, $task_id);
+                    http_response_code(204);
                     break;
                 default:
                     $this->respondMethodNotAllowed('GET, PATCH, DELETE');
@@ -104,9 +108,9 @@ class TaskController {
         header("Allow: $allowed_methods");
     }
 
-    private function respondNotFound(string $id): void {
+    private function respondNotFound(string $task_id): void {
         http_response_code(404);
-        echo json_encode(['message' => "Task with ID $id not found"]);
+        echo json_encode(['message' => "Task with ID $task_id not found"]);
     }
 
     private function respondBadRequest(string $message): void {
@@ -114,9 +118,9 @@ class TaskController {
         echo json_encode(['message' => $message]);
     }
 
-    private function respondCreated(string $id): void {
+    private function respondCreated(string $task_id): void {
         http_response_code(201);
-        echo json_encode(['message' => 'Task Created', 'id' => $id]);
+        echo json_encode(['message' => 'Task Created', 'id' => $task_id]);
     }
 
     private function validateDueDate(string $due_date): bool {
