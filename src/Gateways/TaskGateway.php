@@ -70,35 +70,61 @@ class TaskGateway {
     }
 
     public function updateForUser(int $user_id, string $task_id, array $data): int {
-        $fields = [
-            'title = :title', 
-            'description = :description', 
-            'due_date = :due_date'
-        ];
+        $fields = [];
 
-        if (!empty($data['is_completed'])) {
-            $fields[] = 'is_completed = :is_completed';
+        if ($data['title'] !== null) {
+            $fields['title'] = [
+                $data['title'],
+                PDO::PARAM_STR
+            ];
         }
 
-        $setClause = implode(', ', $fields);
+        $description = !empty($data['description']) ? $data['description'] : null;
 
-        $sql = "UPDATE tasks 
-                SET $setClause 
-                WHERE id = :task_id AND user_id = :user_id";
-
-        $stmt = $this->conn->prepare($sql);
-
-        $stmt->bindValue(':task_id', $task_id, PDO::PARAM_STR);
-        $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
-        $stmt->bindValue(':title', $data['title'], PDO::PARAM_STR);
-        $stmt->bindValue(':description', $data['description'], PDO::PARAM_STR);
-        $stmt->bindValue(':due_date', $data['due_date'], PDO::PARAM_STR);
-
-        if (!empty($data['is_completed'])) {
-            $stmt->bindValue(':is_completed', $data['is_completed'], PDO::PARAM_BOOL);
+        if ($data['description'] !== null) {
+            $fields['description'] = [
+                $description,
+                $description === null ? PDO::PARAM_NULL : PDO::PARAM_STR
+            ];
         }
 
-        $stmt->execute();
+        if ($data['due_date'] !== null) {
+            $fields['due_date'] = [
+                $data['due_date'],
+                PDO::PARAM_STR
+            ];
+        }
+
+        if (array_key_exists('is_completed', $data)) {
+            $fields['is_completed'] = [
+                $data['is_completed'],
+                PDO::PARAM_BOOL
+            ];
+        }
+
+        if (empty($fields)) {
+            return 0;
+        } 
+        else {
+            $set_clauses = array_map(function($column) {
+                return "`$column` = :$column";
+            }, array_keys($fields));
+
+            $sql = 'UPDATE `tasks`'
+                . ' SET ' . implode(', ', $set_clauses)
+                . ' WHERE id = :task_id'
+                . ' AND user_id = :user_id';
+
+            $stmt = $this->conn->prepare($sql);
+
+            foreach ($fields as $column => $values) {
+                $stmt->bindValue(":$column", $values[0], $values[1]);
+            }
+            $stmt->bindValue(':task_id', $task_id, PDO::PARAM_INT);
+            $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+
+            $stmt->execute();
+        }
 
         return $stmt->rowCount();
     }

@@ -74,11 +74,11 @@ class TaskController {
                     $data = (array) json_decode(file_get_contents('php://input'), true);
 
                     // Trim inputs
-                    $data['title'] = trim($data['title'] ?? '');
-                    $data['due_date'] = trim($data['due_date'] ?? '');
-                    $data['description'] = trim($data['description'] ?? '');
+                    $data['title'] = array_key_exists('title', $data) ? trim($data['title']) : null;
+                    $data['due_date'] = array_key_exists('due_date', $data) ? trim($data['due_date']) : null;
+                    $data['description'] = array_key_exists('description', $data) ? trim($data['description']) : null;
 
-                    $errors = $this->getValidationErrors($data);
+                    $errors = $this->getUpdateValidationErrors($data);
                    
                     if (!empty($errors)) {
                         $this->respondUnprocessableEntity($errors);
@@ -86,7 +86,7 @@ class TaskController {
                     }
 
                     $rows = $this->gateway->updateForUser($this->user_id, $task_id, $data);
-                    echo json_encode(['message' => 'Task Updated', 'rows' => $rows]);
+                    echo json_encode(['message' => $rows]);
                     break;
                 case 'DELETE':
                     $this->gateway->deleteForUser($this->user_id, $task_id);
@@ -128,10 +128,39 @@ class TaskController {
         return $date && $date->format('Y-m-d') === $due_date;
     }
 
+    private function getUpdateValidationErrors(array $data): array {
+        $errors = [];
+
+        if ($data['title'] !== null) {
+            if (empty($data['title'])) {
+                $errors['title'] = 'Title field is required';
+            }
+            else if (strlen($data['title']) > 75) {
+                $errors['title'] = 'Title must be less than or equal 75 characters.';
+            }
+        }
+    
+        if ($data['due_date'] !== null) {
+            if (empty($data['due_date'])) {
+                $errors['due_date'] = 'Due date field is required';
+            }
+            else if (!$this->validateDueDate($data['due_date'])) {
+                $errors['due_date'] = 'Due date must be in YYYY-MM-DD format and also be valid.';
+            }
+        }
+    
+        if ($data['description'] !== null) {
+            if (strlen($data['description']) > 500) {
+                $errors['description'] = 'Description must be less than or equal 500 characters.';
+            }
+        }
+
+        return $errors;
+    }
+
     private function getValidationErrors(array $data): array {
         $errors = [];
 
-        // Test basic validation
         if (empty($data['title'])) {
             $errors['title'] = 'Title field is required';
         }
