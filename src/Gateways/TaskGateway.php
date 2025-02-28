@@ -182,9 +182,18 @@ class TaskGateway {
         $stmt->execute();
     }
 
-    public function deleteAllForUser(int $user_id): void {
+    public function deleteAllForUser(int $user_id, ?bool $is_completed): void {
         $sql = "DELETE FROM tasks
                 WHERE user_id = :user_id";
+
+        if ($is_completed !== null) {
+            if ($is_completed === false) {
+                $sql .= ' AND is_completed = 0';
+            } 
+            else if ($is_completed === true) {
+                $sql .= ' AND is_completed = 1';
+            }
+        } 
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);

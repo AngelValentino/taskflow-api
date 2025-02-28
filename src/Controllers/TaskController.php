@@ -62,7 +62,12 @@ class TaskController {
                 $this->respondCreated($task_id);
             }
             else if ($method === 'DELETE') {
-                $this->gateway->deleteAllForUser($this->user_id);
+                $is_completed = $_GET['completed'] ?? null;
+                if ($is_completed !== null) {
+                    $is_completed = filter_var($_GET['completed'] ?? null, FILTER_VALIDATE_BOOLEAN);
+                } 
+
+                $this->gateway->deleteAllForUser($this->user_id, $is_completed);
                 http_response_code(204);
             }
             else {
