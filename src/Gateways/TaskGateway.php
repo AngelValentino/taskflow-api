@@ -12,16 +12,39 @@ class TaskGateway {
         $this->conn = $database->getConnection();
     }
 
-    public function getAllForUser(int $user_id, ?string $sort_by_column = null, string $order = 'ASC'): array {
-        $sql = "SELECT * FROM tasks
-                WHERE user_id = :user_id";
+    public function getAllForUser(int $user_id, ?string $sort_by_column, ?string $order, ?bool $is_completed): array {
+        $sql = "SELECT * FROM tasks WHERE user_id = :user_id";
 
-        if ($sort_by_column) {
-            $sql .= " ORDER BY $sort_by_column $order";
+        if ($is_completed !== null) {
+            if ($is_completed === false) {
+                $sql .= ' AND is_completed = 0';
+            } 
+            else if ($is_completed === true) {
+                $sql .= ' AND is_completed = 1';
+            }
+
+            if ($sort_by_column) {
+                $sql .= " ORDER BY $sort_by_column $order";
+            } 
+        } 
+        else if ($is_completed === null) {
+            $orderByClause = $sort_by_column ? ", $sort_by_column $order" : '';
+
+            $sql = "(
+                        SELECT * FROM tasks
+                        WHERE user_id = :user_id AND is_completed = 0
+                    )
+                    UNION ALL
+                    (
+                        SELECT * FROM tasks
+                        WHERE user_id = :user_id2 AND is_completed = 1
+                    )
+                    ORDER BY is_completed ASC $orderByClause";
         }
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+        if ($is_completed === null) $stmt->bindValue(':user_id2', $user_id, PDO::PARAM_INT);
         $stmt->execute();
         
         $data = [];
@@ -32,6 +55,26 @@ class TaskGateway {
         }
 
         return $data;
+    }
+
+    public function getUserTaskCount(int $user_id, ?bool $is_completed): int {
+        $sql = "SELECT COUNT(*) as user_task_count FROM tasks WHERE user_id = :user_id";
+
+        if ($is_completed !== null) {
+            if ($is_completed === false) {
+                $sql .= ' AND is_completed = 0';
+            } 
+            else if ($is_completed === true) {
+                $sql .= ' AND is_completed = 1';
+            }
+        } 
+
+        $stmt = $this->conn->prepare($sql);  
+        $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $data['user_task_count'];
     }
 
     public function getForUser(int $user_id, string $task_id): array | false {

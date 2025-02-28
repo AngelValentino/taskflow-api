@@ -18,19 +18,30 @@ class TaskController {
             if ($method === 'GET') {
                 $whitelist_columns = ['due_date'];
                 $sort_by_column = $_GET['sort_by'] ?? null;
-                $order = strtoupper($_GET['order'] ?? 'ASC');
+                $order = isset($_GET['order']) ? strtoupper($_GET['order'] ?? 'ASC') : null;
+                $is_completed = $_GET['completed'] ?? null;
+                $is_counter = $is_counter = filter_var($_GET['counter'] ?? null, FILTER_VALIDATE_BOOLEAN);
+                
+                if ($is_completed !== null) {
+                    $is_completed = filter_var($_GET['completed'] ?? null, FILTER_VALIDATE_BOOLEAN);
+                } 
 
                 if ($sort_by_column && !in_array($sort_by_column, $whitelist_columns)) {
                     $this->respondBadRequest('Invalid sort column parameter.');
                     return;
                 }
         
-                if ($order !== 'ASC' && $order !== 'DESC') {
+                if ($order && $order !== 'ASC' && $order !== 'DESC') {
                     $this->respondBadRequest("Invalid order parameter, must be 'ASC' or 'DESC'."); 
                     return;
                 }
-                
-                echo json_encode($this->gateway->getAllForUser($this->user_id, $sort_by_column, $order));
+
+                if ($is_counter) {
+                    echo json_encode($this->gateway->getUserTaskCount($this->user_id, $is_completed));
+                } 
+                else {
+                    echo json_encode($this->gateway->getAllForUser($this->user_id, $sort_by_column, $order, $is_completed));
+                }   
             }
             else if ($method === 'POST') {
                 $data = (array) json_decode(file_get_contents('php://input'), true);
