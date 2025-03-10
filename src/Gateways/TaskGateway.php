@@ -12,24 +12,22 @@ class TaskGateway {
         $this->conn = $database->getConnection();
     }
 
-    public function getAllForUser(int $user_id, ?string $sort_by_column, ?string $order, ?bool $is_completed): array {
+    public function getAllForUser(int $user_id, ?bool $is_completed, ?string $search_value): array {
         $sql = "SELECT * FROM tasks WHERE user_id = :user_id";
 
         if ($is_completed !== null) {
-            if ($is_completed === false) {
-                $sql .= ' AND is_completed = 0';
-            } 
-            else if ($is_completed === true) {
-                $sql .= ' AND is_completed = 1';
-            }
+            $sql .= $is_completed ? " AND is_completed = 1" : " AND is_completed = 0";
+        }
 
-            if ($sort_by_column) {
-                $sql .= " ORDER BY $sort_by_column $order";
-            } 
+        if (!empty($search_value)) {
+            $sql .= " AND title LIKE :search_value";
         }
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+        if (!empty($search_value)) {
+            $stmt->bindValue(':search_value', "%$search_value%", PDO::PARAM_STR);
+        }
         $stmt->execute();
         
         $data = [];
