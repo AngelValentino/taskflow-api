@@ -12,8 +12,10 @@ use Api\Controllers\LoginController;
 use Api\Controllers\LogoutController;
 use Api\Controllers\TaskController;
 use Api\Controllers\RefreshTokenController;
+use Api\Controllers\QuoteController;
 use Api\Gateways\UserGateway;
 use Api\Gateways\RefreshTokenGateway;
+use Api\Gateways\QuoteGateway;
 use Api\Gateways\TaskGateway;
 use Api\Services\Router;
 
@@ -108,7 +110,10 @@ $router->add('/tasks/{id}', function($task_id) {
 });
 
 $router->add('/quotes', function() {
-    echo json_encode(['message' => 'Endpoint under construction.']);
+    $database = getDbInstance();
+    $quote_gateway = new QuoteGateway($database);
+    $quote_controller = new QuoteController($quote_gateway);
+    $quote_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->dispatch($path);
