@@ -42,12 +42,12 @@ class RegisterController {
         echo json_encode(['errors' => $errors]);
     }
 
-    private function getUsernameValidationErrors(string $username): ?string {
+    private function getUsernameValidationError(string $username): ?string {
         if (empty($username)) {
             return 'Username is required.';
         } 
-        else if (strlen($username) > 32) {
-            return 'Username must be less than or equal 32 characters.';
+        else if (strlen($username) > 20) {
+            return 'Username cannot exceed 20 characters.';
         }
         else if ($this->gateway->getByUsername($username)) {
             return 'Username is already taken, please try another one.';
@@ -57,47 +57,56 @@ class RegisterController {
         }
     }
 
-    private function getEmailValidationErrors(string $email): ?string {
+    private function getEmailValidationError(string $email): ?string {
         if (empty($email)) {
-            return 'Email is required.';
-        } 
-        else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return 'Email is not valid.';
+            return 'Email address is required.';
         }
         else if (strlen($email) > 255) {
-           return 'Email must be less than or equal 255 characters.';
+            return 'Email address cannot exceed 255 characters.';
+        }
+        else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return 'Enter a valid email address.';
         }
         else if ($this->gateway->getByEmail($email)) {
-            return 'Email is already taken, please try another one.';
+            return 'Email address is already taken, please try another one.';
         }
         else {
             return null;
         }
     }
 
-    private function getPasswordValidationErrors(string $password, string $repeatedPassword): ?string {
+    private function getPasswordValidationError(string $password): ?string {
         if (empty($password)) {
             return 'Password is required.';
         }
         else if (strlen($password) < 8) {
-            return 'Password must be at least 8 characters.';
+            return 'Password must be at least 8 characters long.';
         } 
-        else if (strlen($password) > 255) {
-            return 'Password must be less than or equal 255 characters.';
+        else if (strlen($password) > 75) {
+            return 'Password cannot exceed 72 characters.';
         } 
-        else if ($password !== $repeatedPassword) {
-            return 'Passwords do not match.';
-        }
         else {
             return null;
         }
     }
 
+    private function getRepeatedPasswordValidationError(string $password, string $repeatedPassword): ?string {
+        if (empty($repeatedPassword)) {
+            return 'You must confirm your password.';
+        }
+        else if ($password !== $repeatedPassword) {
+            return 'The passwords entered do not match.';
+        }
+        return null;
+    }
+
     private function getValidationErrors(array $data): array {
         $errors = [
-            'username' => $this->getUsernameValidationErrors($data['username']),
-            'email' => $this->getEmailValidationErrors($data['email']),
-            'password' => $this->getPasswordValidationErrors($data['password'], $data['repeated_password'])
+            'username' => $this->getUsernameValidationError($data['username']),
+            'email' => $this->getEmailValidationError($data['email']),
+            'password' => $this->getPasswordValidationError($data['password']),
+            'repeated_password' => $this->getRepeatedPasswordValidationError($data['password'], $data['repeated_password']),
+            'terms' => isset($data['terms']) ? null : 'You must accept terms and conditions in order to register.'
         ];
 
         return array_filter($errors);
