@@ -121,10 +121,17 @@ class TaskGateway {
             ];
         }
 
-        if (array_key_exists('is_completed', $data)) {
+        if ($data['is_completed'] !== null) {
             $fields['is_completed'] = [
                 $data['is_completed'],
                 PDO::PARAM_BOOL
+            ];
+        }
+
+        if ($data['completed_at'] !== null) {
+            $fields['completed_at'] = [
+                $data['completed_at'],
+                PDO::PARAM_STR
             ];
         }
 

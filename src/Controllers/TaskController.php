@@ -82,6 +82,9 @@ class TaskController {
                     $data['due_date'] = array_key_exists('due_date', $data) ? trim($data['due_date']) : null;
                     $data['description'] = array_key_exists('description', $data) ? trim($data['description']) : null;
 
+                    $data['is_completed'] = isset($data['is_completed']) && $data['is_completed'] ? true : null;
+                    $data['completed_at'] = isset($data['is_completed']) && $data['is_completed'] ? date('Y-m-d') : null;
+
                     $errors = $this->getUpdateValidationErrors($data);
                    
                     if (!empty($errors)) {
