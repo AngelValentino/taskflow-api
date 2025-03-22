@@ -42,7 +42,7 @@ class RegisterController {
         echo json_encode(['errors' => $errors]);
     }
 
-    private function getUsernameValidationError(string $username): ?string {
+    private function getUsernameValidationError(?string $username): ?string {
         if (empty($username)) {
             return 'Username is required.';
         } 
@@ -57,7 +57,7 @@ class RegisterController {
         }
     }
 
-    private function getEmailValidationError(string $email): ?string {
+    private function getEmailValidationError(?string $email): ?string {
         if (empty($email)) {
             return 'Email address is required.';
         }
@@ -75,7 +75,7 @@ class RegisterController {
         }
     }
 
-    private function getPasswordValidationError(string $password): ?string {
+    private function getPasswordValidationError(?string $password): ?string {
         if (empty($password)) {
             return 'Password is required.';
         }
@@ -90,7 +90,7 @@ class RegisterController {
         }
     }
 
-    private function getRepeatedPasswordValidationError(string $password, string $repeatedPassword): ?string {
+    private function getRepeatedPasswordValidationError(?string $password, ?string $repeatedPassword): ?string {
         if (empty($repeatedPassword)) {
             return 'You must confirm your password.';
         }
@@ -102,10 +102,10 @@ class RegisterController {
 
     private function getValidationErrors(array $data): array {
         $errors = [
-            'username' => $this->getUsernameValidationError($data['username']),
-            'email' => $this->getEmailValidationError($data['email']),
-            'password' => $this->getPasswordValidationError($data['password']),
-            'repeated_password' => $this->getRepeatedPasswordValidationError($data['password'], $data['repeated_password']),
+            'username' => $this->getUsernameValidationError($data['username'] ?? null),
+            'email' => $this->getEmailValidationError($data['email'] ?? null),
+            'password' => $this->getPasswordValidationError($data['password'] ?? null),
+            'repeated_password' => $this->getRepeatedPasswordValidationError($data['password'] ?? null, $data['repeated_password'] ?? null),
             'terms' => isset($data['terms']) ? null : 'You must accept terms and conditions in order to register.'
         ];
 
