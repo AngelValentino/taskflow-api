@@ -140,7 +140,7 @@ class TaskController {
 
         if ($data['title'] !== null) {
             if (empty($data['title'])) {
-                $errors['title'] = 'Title field is required';
+                $errors['title'] = 'Title field is required.';
             }
             else if (strlen($data['title']) > 75) {
                 $errors['title'] = 'Title must be less than or equal 75 characters.';
@@ -149,7 +149,7 @@ class TaskController {
     
         if ($data['due_date'] !== null) {
             if (empty($data['due_date'])) {
-                $errors['due_date'] = 'Due date field is required';
+                $errors['due_date'] = 'Due date field is required.';
             }
             else if (!$this->validateDueDate($data['due_date'])) {
                 $errors['due_date'] = 'Due date must be in YYYY-MM-DD format and also be valid.';
@@ -169,14 +169,14 @@ class TaskController {
         $errors = [];
 
         if (empty($data['title'])) {
-            $errors['title'] = 'Title field is required';
+            $errors['title'] = 'Title field is required.';
         }
         else if (strlen($data['title']) > 75) {
             $errors['title'] = 'Title must be less than or equal 75 characters.';
         }
 
         if (empty($data['due_date'])) {
-            $errors['due_date'] = 'Due date field is required';
+            $errors['due_date'] = 'Due date field is required.';
         }
         else if (!$this->validateDueDate($data['due_date'])) {
             $errors['due_date'] = 'Due date must be in YYYY-MM-DD format and also be valid.';
