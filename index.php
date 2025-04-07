@@ -4,6 +4,7 @@ declare(strict_types = 1);
 require __DIR__ . '/vendor/autoload.php';
 
 use Api\Database\Database;
+use Api\Database\Redis;
 use Api\Services\ErrorHandler;
 use Api\Services\JWTCodec;
 use Api\Services\Auth;
@@ -18,6 +19,7 @@ use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\QuoteGateway;
 use Api\Gateways\TaskGateway;
 use Api\Services\Router;
+use Api\Services\RateLimiter;
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS'); // Methods allowed for the API
@@ -58,7 +60,22 @@ function getUserAuthServices(): array {
     ];
 }
 
+function handleRateLimit(string $route, int $maxRequests = 100) {
+    $redisConnection = new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']);
+    $rateLimiter = new RateLimiter($redisConnection, $maxRequests);
+    $userKey = $_SERVER['REMOTE_ADDR'];
+    $rateLimitKey = $route . ":" . $userKey;
+
+    if ($rateLimiter->isRateLimited($rateLimitKey)) {
+        header('Retry-After: 60');
+        http_response_code(429);
+        echo json_encode(['message' => 'Rate limit exceeded. Please try again later.']);
+        exit;
+    }
+}
+
 $router->add('/register', function() {
+    handleRateLimit('register', 5);
     $database = getDbInstance();
     $user_gateway = new UserGateway($database);
     $register_controller = new RegisterController($user_gateway);
@@ -66,24 +83,28 @@ $router->add('/register', function() {
 });
 
 $router->add('/login', function() {
+    handleRateLimit('login', 5);
     $auth_services = getUserAuthServices();
     $login_controller = new LoginController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
     $login_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/logout', function() {
+    handleRateLimit('logout', 5);
     $auth_services = getUserAuthServices();
     $logout_controller = new LogoutController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
     $logout_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/refresh', function() {
+    handleRateLimit('refresh', 1);
     $auth_services = getUserAuthServices();
     $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
     $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/tasks', function() {
+    handleRateLimit('tasks', 50);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
 
@@ -97,6 +118,7 @@ $router->add('/tasks', function() {
 });
 
 $router->add('/tasks/{id}', function($task_id) {
+    handleRateLimit("task:{$task_id}", 50);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
 
@@ -110,6 +132,7 @@ $router->add('/tasks/{id}', function($task_id) {
 });
 
 $router->add('/quotes', function() {
+    handleRateLimit('quotes', 5);
     $database = getDbInstance();
     $quote_gateway = new QuoteGateway($database);
     $quote_controller = new QuoteController($quote_gateway);
