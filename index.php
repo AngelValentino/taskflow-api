@@ -11,6 +11,7 @@ use Api\Services\Auth;
 use Api\Controllers\RegisterController;
 use Api\Controllers\LoginController;
 use Api\Controllers\LogoutController;
+use Api\Controllers\RecoverPasswordController;
 use Api\Controllers\TaskController;
 use Api\Controllers\RefreshTokenController;
 use Api\Controllers\QuoteController;
@@ -18,8 +19,10 @@ use Api\Gateways\UserGateway;
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\QuoteGateway;
 use Api\Gateways\TaskGateway;
+use Api\Services\Mailer;
 use Api\Services\Router;
 use Api\Services\RateLimiter;
+use PHPMailer\PHPMailer\PHPMailer;
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS'); // Methods allowed for the API
@@ -101,6 +104,19 @@ $router->add('/refresh', function() {
     $auth_services = getUserAuthServices();
     $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
     $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
+});
+
+$router->add('/recover', function() {
+/*     handleRateLimit('recover', 10); */
+    $database = getDbInstance();
+    $user_gateway = new UserGateway($database);
+    $codec = new JWTCodec($_ENV['SECRET_KEY']);
+    $auth = new Auth($codec);
+    $PHPMailer = new PHPMailer();
+    $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD']);
+
+    $recover_password_controller = new RecoverPasswordController($user_gateway, $auth, $mailer, $_ENV['CLIENT_URL']);
+    $recover_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/tasks', function() {

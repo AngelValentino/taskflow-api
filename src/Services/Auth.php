@@ -69,4 +69,16 @@ class Auth {
             'refresh_token_expiry' => $refresh_token_expiry
         ];
     }
+
+    public function getRecoverPasswordToken($user): string {
+        $payload = [
+            'user_id' => $user['id'],
+            'email' => $user['email'],
+            'exp' => time() + 900, // 15 min expiry
+            'type' => 'reset'
+        ];
+
+        $reset_token = $this->codec->encode($payload);
+        return $reset_token;
+    }
 }
