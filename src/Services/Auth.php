@@ -6,6 +6,7 @@ use Exception;
 
 class Auth {
     private int $user_id;
+    private ?string $user_email;
     
     public function __construct(
         private JWTCodec $codec
@@ -17,7 +18,11 @@ class Auth {
         return $this->user_id;
     }
 
-    public function authenticateAccessToken(bool $header = false, string $token = null): bool {
+    public function getUserEmail(): string {
+        return $this->user_email;
+    }
+
+    public function authenticateAccessToken(bool $header = false, string $token = null, string $expected_type = null): bool {
         if (!preg_match("/^Bearer\s+(.*)$/", $_SERVER['HTTP_AUTHORIZATION'], $matches) && $header === true) {
             http_response_code(400);
             echo json_encode(['message' => 'Incomplete authorization header.']);
@@ -42,13 +47,21 @@ class Auth {
             echo json_encode(['message' => $e->getMessage()]);
             return false;
         }
+
+        if ($expected_type !== null && (($payload['type'] ?? null) !== $expected_type)) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Invalid token type.']);
+            return false;
+        }
      
         $this->user_id = $payload['sub'];
+        $this->user_email = $payload['email'] ?? null;
 
         return true;
     }
 
     public function getAccessToken(array $user): array {
+        // TODO Add token types and validation
         $payload = [
             'sub' => $user['id'],
             'username' => $user['username'],
@@ -72,9 +85,9 @@ class Auth {
 
     public function getRecoverPasswordToken($user): string {
         $payload = [
-            'user_id' => $user['id'],
-            'email' => $user['email'],
+            'sub' => $user['id'],
             'exp' => time() + 900, // 15 min expiry
+            'email' => $user['email'],
             'type' => 'reset'
         ];
 

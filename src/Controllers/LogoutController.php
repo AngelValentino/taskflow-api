@@ -29,7 +29,7 @@ class LogoutController {
 
             // Avoids locking out the user in the client after aborts a refresh token request as it will have an outdated
             // refresh token (not in whitelist)
-            /* $refresh_token = $this->refresh_token_gateway->getByToken($data['token']);
+/*             $refresh_token = $this->refresh_token_gateway->getByToken($data['token']);
 
             if ($refresh_token === false) {
                 $this->respondBadRequest('Invalid token(not on whitelist).');

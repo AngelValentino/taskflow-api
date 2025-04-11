@@ -15,6 +15,7 @@ use Api\Controllers\RecoverPasswordController;
 use Api\Controllers\TaskController;
 use Api\Controllers\RefreshTokenController;
 use Api\Controllers\QuoteController;
+use Api\Controllers\ResetPasswordController;
 use Api\Gateways\UserGateway;
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\QuoteGateway;
@@ -81,7 +82,9 @@ $router->add('/register', function() {
     handleRateLimit('register', 5);
     $database = getDbInstance();
     $user_gateway = new UserGateway($database);
-    $register_controller = new RegisterController($user_gateway);
+    $PHPMailer = new PHPMailer();
+    $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD']);
+    $register_controller = new RegisterController($user_gateway, $mailer);
     $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
@@ -106,8 +109,8 @@ $router->add('/refresh', function() {
     $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
-$router->add('/recover', function() {
-/*     handleRateLimit('recover', 10); */
+$router->add('/recover-password', function() {
+    handleRateLimit('recover-password', 5);
     $database = getDbInstance();
     $user_gateway = new UserGateway($database);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
@@ -117,6 +120,20 @@ $router->add('/recover', function() {
 
     $recover_password_controller = new RecoverPasswordController($user_gateway, $auth, $mailer, $_ENV['CLIENT_URL']);
     $recover_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
+});
+
+$router->add('/reset-password', function() {
+    handleRateLimit('reset-password', 10);
+    $database = getDbInstance();
+
+    $user_gateway = new UserGateway($database);
+    $codec = new JWTCodec($_ENV['SECRET_KEY']);
+    $auth = new Auth($codec);
+    $PHPMailer = new PHPMailer();
+    $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD']);
+
+    $reset_password_controller = new ResetPasswordController($user_gateway, $auth, $mailer);
+    $reset_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/tasks', function() {

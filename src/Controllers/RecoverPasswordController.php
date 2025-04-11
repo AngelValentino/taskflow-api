@@ -29,7 +29,6 @@ class RecoverPasswordController {
             $user = $this->user_gateway->getByEmail($email);
             
             // Always return the same response to avoid leaking user existence
-            http_response_code(200);
             echo json_encode(['message' => "If the account exists, you will receive an email shortly. If you don't see it in your inbox, please check your spam or junk folder. If the email is there, kindly mark it as \"Not Spam\" to ensure you receive future messages from us."]);
 
             if ($user) {

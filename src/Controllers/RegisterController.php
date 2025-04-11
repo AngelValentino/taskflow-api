@@ -3,10 +3,12 @@
 namespace Api\Controllers;
 
 use Api\Gateways\UserGateway;
+use Api\Services\Mailer;
 
 class RegisterController {
     public function __construct(
         private UserGateway $gateway,
+        private Mailer $mailer
     ) {
 
     }
@@ -23,9 +25,9 @@ class RegisterController {
             }
 
             $this->gateway->create($data['username'], $data['email'], $data['password']);
-            
+            $this->mailer->sendWelcomeEmail($data['email'], $data['username']);
+
             http_response_code(201);
-            echo json_encode(['message' => 'User created successfully']);
         } 
         else {
             $this->respondMethodNotAllowed('POST');

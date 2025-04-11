@@ -28,6 +28,22 @@ class UserGateway {
         $stmt->execute();
     }
 
+    public function updatePassword(int $user_id, string $password): void {
+        $sql = "UPDATE users 
+                SET password_hash = :password_hash
+                WHERE id = :user_id";
+
+        $stmt = $this->conn->prepare($sql);
+
+        $options = ['cost' => 12];
+        $password_hash = password_hash($password, PASSWORD_BCRYPT, $options);
+
+        $stmt->bindValue(':password_hash', $password_hash, PDO::PARAM_STR);
+        $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+
+        $stmt->execute();
+    }
+
     public function getByUsername(string $username): array | false {
         $sql = "SELECT * FROM users 
                 WHERE username = :username";
@@ -44,7 +60,7 @@ class UserGateway {
                 users WHERE id = :id";
         
         $stmt = $this->conn->prepare($sql);
-        $stmt->bindValue(':id', $id, PDO::PARAM_STR);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
         
         return $stmt->fetch(PDO::FETCH_ASSOC);
