@@ -64,16 +64,27 @@ function getUserAuthServices(): array {
     ];
 }
 
+function getIpAddress() {
+    if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ipAddresses = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        $clientIp = trim($ipAddresses[0]);
+        return $clientIp;
+    }
+    else {
+        return $_SERVER['REMOTE_ADDR'];
+    }
+}
+
 function handleRateLimit(string $route, int $maxRequests = 100) {
     $redisConnection = new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']);
     $rateLimiter = new RateLimiter($redisConnection, $maxRequests);
-    $userKey = $_SERVER['REMOTE_ADDR'];
-    $rateLimitKey = $route . ":" . $userKey;
+    $userIp = getIpAddress();
+    $rateLimitKey = $route . ":" . $userIp;
 
     if ($rateLimiter->isRateLimited($rateLimitKey)) {
         header('Retry-After: 60');
         http_response_code(429);
-        echo json_encode(['message' => 'Rate limit exceeded. Please try again later.']);
+        echo json_encode(['message' => 'Rate limit exceeded. Please try again later.', 'ip' => $userIp]);
         exit;
     }
 }
@@ -141,7 +152,7 @@ $router->add('/tasks', function() {
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
 
-    if (!$auth->authenticateAccessToken(true)) exit;
+    if (!$auth->authenticateAccessToken(true, null, 'access')) exit;
     $user_id = $auth->getUserId();
 
     $database = getDbInstance();
@@ -155,7 +166,7 @@ $router->add('/tasks/{id}', function($task_id) {
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
 
-    if (!$auth->authenticateAccessToken(true)) exit;
+    if (!$auth->authenticateAccessToken(true, null, 'access')) exit;
     $user_id = $auth->getUserId();
 
     $database = getDbInstance();
@@ -165,7 +176,7 @@ $router->add('/tasks/{id}', function($task_id) {
 });
 
 $router->add('/quotes', function() {
-    handleRateLimit('quotes', 5);
+    handleRateLimit('quotes', 1);
     $database = getDbInstance();
     $quote_gateway = new QuoteGateway($database);
     $quote_controller = new QuoteController($quote_gateway);

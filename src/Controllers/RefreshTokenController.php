@@ -24,7 +24,7 @@ class RefreshTokenController {
                 return;
             }
 
-            if (!$this->auth->authenticateAccessToken(false, $data['token'])) return;
+            if (!$this->auth->authenticateAccessToken(false, $data['token'], 'refresh')) return;
             $user_id = $this->auth->getUserId();
 
             $refresh_token = $this->gateway->getByToken($data['token']);

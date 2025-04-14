@@ -22,7 +22,7 @@ class Auth {
         return $this->user_email;
     }
 
-    public function authenticateAccessToken(bool $header = false, string $token = null, string $expected_type = null): bool {
+    public function authenticateAccessToken(bool $header = true, string $token = null, string $expected_type = null): bool {
         if (!preg_match("/^Bearer\s+(.*)$/", $_SERVER['HTTP_AUTHORIZATION'], $matches) && $header === true) {
             http_response_code(400);
             echo json_encode(['message' => 'Incomplete authorization header.']);
@@ -61,11 +61,11 @@ class Auth {
     }
 
     public function getAccessToken(array $user): array {
-        // TODO Add token types and validation
         $payload = [
             'sub' => $user['id'],
             'username' => $user['username'],
-            'exp' => time() + 300 # 5 minutes
+            'exp' => time() + 300, # 5 minutes
+            'type' => 'access'
         ];
 
         $access_token = $this->codec->encode($payload);
@@ -73,7 +73,8 @@ class Auth {
         $refresh_token_expiry = time() + 432000; # 5 days
         $refresh_token = $this->codec->encode([
             'sub' => $user['id'],
-            'exp' => $refresh_token_expiry
+            'exp' => $refresh_token_expiry,
+            'type' => 'refresh'
         ]);
 
         return [
