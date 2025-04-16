@@ -5,12 +5,14 @@ namespace Api\Controllers;
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\UserGateway;
 use Api\Services\Auth;
+use Api\Services\Responder;
 
 class LoginController {
     public function __construct(
         private UserGateway $gateway,
         private RefreshTokenGateway $refresh_token_gateway,
-        private Auth $auth
+        private Auth $auth,
+        private Responder $responder
     ) {
         
     }
@@ -29,7 +31,7 @@ class LoginController {
             $error = $this->getUserValidationErrorMessage($data, $user);
 
             if (isset($error)) {
-                $this->respondUnauthorized($error);
+                $this->responder->respondUnauthorized($error);
                 return;
             }
 
@@ -47,18 +49,8 @@ class LoginController {
             ]);
         } 
         else {
-            $this->respondMethodNotAllowed('POST');
+            $this->responder->respondMethodNotAllowed('POST');
         }
-    }
-
-    private function respondMethodNotAllowed(string $allowed_methods): void {
-        http_response_code(405);
-        header("Allow: $allowed_methods");
-    }
-
-    private function respondUnauthorized(string $error): void {
-        http_response_code(401);
-        echo json_encode(['message' => $error]);
     }
 
     private function getUserValidationErrorMessage(array $data, array | false $user): ?string {

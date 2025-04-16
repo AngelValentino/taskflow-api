@@ -95,7 +95,7 @@ class TaskGateway {
         return $this->conn->lastInsertId();
     }
 
-    public function updateForUser(int $user_id, string $task_id, array $data): int {
+    public function updateForUser(int $user_id, string $task_id, array $data): void {
         $fields = [];
 
         if ($data['title'] !== null) {
@@ -136,7 +136,7 @@ class TaskGateway {
         }
 
         if (empty($fields)) {
-            return 0;
+            return;
         } 
         else {
             $set_clauses = array_map(function($column) {
@@ -158,8 +158,6 @@ class TaskGateway {
 
             $stmt->execute();
         }
-
-        return $stmt->rowCount();
     }
 
     public function deleteForUser(int $user_id, string $task_id): void {

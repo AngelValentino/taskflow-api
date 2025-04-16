@@ -5,12 +5,14 @@ namespace Api\Controllers;
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\UserGateway;
 use Api\Services\Auth;
+use Api\Services\Responder;
 
 class LogoutController {
     public function __construct(
         private UserGateway $user_gateway,
         private RefreshTokenGateway $refresh_token_gateway,
-        private Auth $auth
+        private Auth $auth,
+        private Responder $responder
     ) {
         
     }
@@ -20,7 +22,7 @@ class LogoutController {
             $data = (array) json_decode(file_get_contents('php://input'), true);
 
             if (empty($data['token'])) {
-                $this->respondBadRequest('Missing token.');
+                $this->responder->respondBadRequest('Missing token.');
                 return;
             }
 
@@ -33,29 +35,15 @@ class LogoutController {
             $user = $this->user_gateway->getById($user_id);
 
             if ($user === false) {
-                $this->respondUnauthorized();
+                $this->responder->respondUnauthorized('Invalid authentication.');
                 return;
             }
 
             $this->refresh_token_gateway->delete($data['token']);
+            $this->responder->respondNoContent();
         }
         else {
-            $this->respondMethodNotAllowed('POST');
+            $this->responder->respondMethodNotAllowed('POST');
         }
-    }
-
-    private function respondBadRequest(string $message): void {
-        http_response_code(400);
-        echo json_encode(['message' => $message]);
-    }
-
-    private function respondUnauthorized(): void {
-        http_response_code(401);
-        echo json_encode(['message' => 'Invalid authentication.']);
-    }
-
-    private function respondMethodNotAllowed(string $allowed_methods): void {
-        http_response_code(405);
-        header("Allow: $allowed_methods");
     }
 }

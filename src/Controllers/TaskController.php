@@ -3,12 +3,14 @@
 namespace Api\Controllers;
 
 use Api\Gateways\TaskGateway;
+use Api\Services\Responder;
 use DateTime;
 
 class TaskController {
     public function __construct(
+        private int $user_id,
         private TaskGateway $gateway,
-        private int $user_id
+        private Responder $responder,
     ) { 
 
     }
@@ -42,12 +44,12 @@ class TaskController {
                 $errors = $this->getValidationErrors($data);
                
                 if (!empty($errors)) {
-                    $this->respondUnprocessableEntity($errors);
+                    $this->responder->respondUnprocessableEntity($errors);
                     return;
                 }
 
                 $task_id = $this->gateway->createForUser($this->user_id, $data);
-                $this->respondCreated($task_id);
+                $this->responder->respondCreated("Task with ID: $task_id created");
             }
             else if ($method === 'DELETE') {
                 $is_completed = $_GET['completed'] ?? null;
@@ -56,17 +58,17 @@ class TaskController {
                 } 
 
                 $this->gateway->deleteAllForUser($this->user_id, $is_completed);
-                http_response_code(204);
+                $this->responder->respondNoContent();
             }
             else {
-                $this->respondMethodNotAllowed('GET, POST, DELETE');
+                $this->responder->respondMethodNotAllowed('GET, POST, DELETE');
             }
         } 
         else {
             $task = $this->gateway->getForUser($this->user_id, $task_id);
 
             if ($task === false) {
-                $this->respondNotFound($task_id);
+                $this->responder->respondNotFound("Task with ID: $task_id not found");
                 return;
             }
 
@@ -88,46 +90,21 @@ class TaskController {
                     $errors = $this->getUpdateValidationErrors($data);
                    
                     if (!empty($errors)) {
-                        $this->respondUnprocessableEntity($errors);
+                        $this->responder->respondUnprocessableEntity($errors);
                         return;
                     }
 
-                    $rows = $this->gateway->updateForUser($this->user_id, $task_id, $data);
-                    echo json_encode(['message' => $rows]);
+                    $this->gateway->updateForUser($this->user_id, $task_id, $data);
+                    $this->responder->respondNoContent();
                     break;
                 case 'DELETE':
                     $this->gateway->deleteForUser($this->user_id, $task_id);
-                    http_response_code(204);
+                    $this->responder->respondNoContent();
                     break;
                 default:
-                    $this->respondMethodNotAllowed('GET, PATCH, DELETE');
+                    $this->responder->respondMethodNotAllowed('GET, PATCH, DELETE');
             }
         }
-    }
-
-    private function respondUnprocessableEntity(array $errors): void {
-        http_response_code(422);
-        echo json_encode(['errors' => $errors]);
-    }
-
-    private function respondMethodNotAllowed(string $allowed_methods): void {
-        http_response_code(405);
-        header("Allow: $allowed_methods");
-    }
-
-    private function respondNotFound(string $task_id): void {
-        http_response_code(404);
-        echo json_encode(['message' => "Task with ID $task_id not found"]);
-    }
-
-    private function respondBadRequest(string $message): void {
-        http_response_code(400);
-        echo json_encode(['message' => $message]);
-    }
-
-    private function respondCreated(string $task_id): void {
-        http_response_code(201);
-        echo json_encode(['message' => 'Task Created', 'id' => $task_id]);
     }
 
     private function validateDueDate(string $due_date): bool {

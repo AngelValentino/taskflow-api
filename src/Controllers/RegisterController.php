@@ -4,11 +4,13 @@ namespace Api\Controllers;
 
 use Api\Gateways\UserGateway;
 use Api\Services\Mailer;
+use Api\Services\Responder;
 
 class RegisterController {
     public function __construct(
         private UserGateway $gateway,
-        private Mailer $mailer
+        private Mailer $mailer,
+        private Responder $responder
     ) {
 
     }
@@ -20,28 +22,18 @@ class RegisterController {
             $errors = $this->getValidationErrors($data);
 
             if (!empty($errors)) {
-                $this->respondUnprocessableEntity($errors);
+                $this->responder->respondUnprocessableEntity($errors);
                 return;
             }
 
             $this->gateway->create($data['username'], $data['email'], $data['password']);
             $this->mailer->sendWelcomeEmail($data['email'], $data['username']);
 
-            http_response_code(201);
+            $this->responder->respondCreated('User created.');
         } 
         else {
-            $this->respondMethodNotAllowed('POST');
+            $this->responder->respondMethodNotAllowed('POST');
         }
-    }
-
-    private function respondMethodNotAllowed(string $allowed_methods): void {
-        http_response_code(405);
-        header("Allow: $allowed_methods");
-    }
-
-    private function respondUnprocessableEntity(array $errors): void {
-        http_response_code(422);
-        echo json_encode(['errors' => $errors]);
     }
 
     private function getUsernameValidationError(?string $username): ?string {

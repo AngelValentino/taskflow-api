@@ -5,12 +5,14 @@ namespace Api\Controllers;
 use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\UserGateway;
 use Api\Services\Auth;
+use Api\Services\Responder;
 
 class RefreshTokenController {
     public function __construct(
         private UserGateway $user_gateway,
         private RefreshTokenGateway $gateway,
-        private Auth $auth
+        private Auth $auth,
+        private Responder $responder
     ) {
 
     }
@@ -20,7 +22,7 @@ class RefreshTokenController {
             $data = (array) json_decode(file_get_contents('php://input'), true);
 
             if (empty($data['token'])) {
-                $this->respondBadRequest('Missing token.');
+                $this->responder->respondBadRequest('Missing token.');
                 return;
             }
 
@@ -30,16 +32,15 @@ class RefreshTokenController {
             $refresh_token = $this->gateway->getByToken($data['token']);
 
             if ($refresh_token === false) {
-                $this->respondBadRequest('Invalid token(not on whitelist).');
+                $this->responder->respondBadRequest('Invalid token(not on whitelist).');
                 return;
             }
 
-            // validate user info
-
+            // Validate user info
             $user = $this->user_gateway->getById($user_id);
 
             if ($user === false) {
-                $this->respondUnauthorized();
+                $this->responder->respondUnauthorized('Invalid authentication.');
                 return;
             }
 
@@ -58,23 +59,8 @@ class RefreshTokenController {
             ]);
         } 
         else {
-            $this->respondMethodNotAllowed('POST');
+            $this->responder->respondMethodNotAllowed('POST');
             return;
         }
-    }
-
-    private function respondBadRequest(string $message): void {
-        http_response_code(400);
-        echo json_encode(['message' => $message]);
-    }
-
-    private function respondUnauthorized(): void {
-        http_response_code(401);
-        echo json_encode(['message' => 'Invalid authentication.']);
-    }
-    
-    private function respondMethodNotAllowed(string $allowed_methods): void {
-        http_response_code(405);
-        header("Allow: $allowed_methods");
     }
 }

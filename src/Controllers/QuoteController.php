@@ -3,12 +3,13 @@
 namespace Api\Controllers;
 
 use Api\Gateways\QuoteGateway;
+use Api\Services\Responder;
 
 class QuoteController {
     public function __construct(
-        private QuoteGateway $gateway
-    )
-    {
+        private QuoteGateway $gateway,
+        private Responder $responder
+    ) {
         
     }
 
@@ -16,13 +17,9 @@ class QuoteController {
         if ($method === 'GET') {
             $quotes = $this->gateway->getAllQuotes();
             echo json_encode($quotes);
-        } else {
-            $this->respondMethodNotAllowed('GET');
+        } 
+        else {
+            $this->responder->respondMethodNotAllowed('GET');
         }
-    }
-
-    private function respondMethodNotAllowed(string $allowed_methods): void {
-        http_response_code(405);
-        header("Allow: $allowed_methods");
     }
 }

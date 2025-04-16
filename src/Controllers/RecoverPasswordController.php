@@ -5,13 +5,15 @@ namespace Api\Controllers;
 use Api\Gateways\UserGateway;
 use Api\Services\Auth;
 use Api\Services\Mailer;
+use Api\Services\Responder;
 
 class RecoverPasswordController {
     public function __construct(
+        private string $client_url,
         private UserGateway $user_gateway,
         private Auth $auth,
         private Mailer $mailer,
-        private string $client_url
+        private Responder $responder
     ) {
         
     }
@@ -22,7 +24,7 @@ class RecoverPasswordController {
             $email = $data['email'];
 
             if (!isset($email)) {
-                $this->respondBadRequest('Email is required');
+                $this->responder->respondBadRequest('Email is required');
                 return;
             }
 
@@ -38,17 +40,7 @@ class RecoverPasswordController {
             }
         }
         else {
-            $this->respondMethodNotAllowed('POST');
+            $this->responder->respondMethodNotAllowed('POST');
         }
-    }
-
-    private function respondMethodNotAllowed(string $allowed_methods): void {
-        http_response_code(405);
-        header("Allow: $allowed_methods");
-    }
-
-    private function respondBadRequest(string $message): void {
-        http_response_code(400);
-        echo json_encode(['message' => $message]);
     }
 }

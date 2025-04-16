@@ -23,6 +23,7 @@ use Api\Gateways\TaskGateway;
 use Api\Services\Mailer;
 use Api\Services\Router;
 use Api\Services\RateLimiter;
+use Api\Services\Responder;
 use PHPMailer\PHPMailer\PHPMailer;
 
 header('Access-Control-Allow-Origin: *');
@@ -91,59 +92,74 @@ function handleRateLimit(string $route, int $maxRequests = 100) {
 
 $router->add('/register', function() {
     handleRateLimit('register', 5);
+    
+    $responder = new Responder;
     $database = getDbInstance();
     $user_gateway = new UserGateway($database);
     $PHPMailer = new PHPMailer();
     $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD']);
-    $register_controller = new RegisterController($user_gateway, $mailer);
+    $register_controller = new RegisterController($user_gateway, $mailer, $responder);
+    
     $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/login', function() {
     handleRateLimit('login', 5);
+
+    $responder = new Responder;
     $auth_services = getUserAuthServices();
-    $login_controller = new LoginController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
+    $login_controller = new LoginController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth'], $responder);
+    
     $login_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/logout', function() {
     handleRateLimit('logout', 5);
+
+    $responder = new Responder;
     $auth_services = getUserAuthServices();
-    $logout_controller = new LogoutController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
+    $logout_controller = new LogoutController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth'], $responder);
+    
     $logout_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/refresh', function() {
     handleRateLimit('refresh', 1);
+
+    $responder = new Responder;
     $auth_services = getUserAuthServices();
-    $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
+    $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth'], $responder);
+    
     $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/recover-password', function() {
     handleRateLimit('recover-password', 5);
+
+    $responder = new Responder;
     $database = getDbInstance();
     $user_gateway = new UserGateway($database);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
     $PHPMailer = new PHPMailer();
     $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD']);
-
-    $recover_password_controller = new RecoverPasswordController($user_gateway, $auth, $mailer, $_ENV['CLIENT_URL']);
+    $recover_password_controller = new RecoverPasswordController($_ENV['CLIENT_URL'], $user_gateway, $auth, $mailer, $responder);
+    
     $recover_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
 $router->add('/reset-password', function() {
     handleRateLimit('reset-password', 10);
+    
+    $responder = new Responder;
     $database = getDbInstance();
-
     $user_gateway = new UserGateway($database);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
     $PHPMailer = new PHPMailer();
     $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD']);
-
-    $reset_password_controller = new ResetPasswordController($user_gateway, $auth, $mailer);
+    $reset_password_controller = new ResetPasswordController($user_gateway, $auth, $mailer, $responder);
+    
     $reset_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
@@ -155,31 +171,39 @@ $router->add('/tasks', function() {
     if (!$auth->authenticateAccessToken(true, null, 'access')) exit;
     $user_id = $auth->getUserId();
 
+    $responder = new Responder;
     $database = getDbInstance();
     $task_gateway = new TaskGateway($database);
-    $task_controller = new TaskController($task_gateway, $user_id);
+    $task_controller = new TaskController($user_id, $task_gateway, $responder);
+    
     $task_controller->processRequest($_SERVER['REQUEST_METHOD'], null);
 });
 
 $router->add('/tasks/{id}', function($task_id) {
     handleRateLimit("task:{$task_id}", 50);
+
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
 
     if (!$auth->authenticateAccessToken(true, null, 'access')) exit;
     $user_id = $auth->getUserId();
 
+    $responder = new Responder;
     $database = getDbInstance();
     $task_gateway = new TaskGateway($database);
-    $task_controller = new TaskController($task_gateway, $user_id);
+    $task_controller = new TaskController($user_id, $task_gateway, $responder);
+    
     $task_controller->processRequest($_SERVER['REQUEST_METHOD'], $task_id);
 });
 
 $router->add('/quotes', function() {
     handleRateLimit('quotes', 1);
+
+    $responder = new Responder;
     $database = getDbInstance();
-    $quote_gateway = new QuoteGateway($database);
-    $quote_controller = new QuoteController($quote_gateway);
+    $quote_gateway = new QuoteGateway($database); 
+    $quote_controller = new QuoteController($quote_gateway, $responder);
+    
     $quote_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
 
