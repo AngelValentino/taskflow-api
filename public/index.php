@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types = 1);
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 use Api\Database\Database;
 use Api\Database\Redis;
@@ -31,17 +31,18 @@ header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS'); // Me
 header('Access-Control-Allow-Headers: Content-Type, Authorization'); // Headers allowed in the request
 header('Content-type: application/json; charset=UTF-8');
 
-set_error_handler([ErrorHandler::class, 'handleError']);
-set_exception_handler([ErrorHandler::class, 'handleException']);
+// Load environment variables from the .env file first
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
+
+set_error_handler([ErrorHandler::class, 'handleError']); // Convert all PHP warnings/notices into ErrorException
+set_exception_handler([ErrorHandler::class, 'handleException']); // Handle uncaught exceptions
 
 // Handle preflight requests (OPTIONS)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200); // Return a 200 OK response for OPTIONS
     exit; // Exit early to avoid further processing
 }
-
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-$dotenv->load();
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $router = new Router;
@@ -69,11 +70,14 @@ function getIpAddress() {
     if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
         $ipAddresses = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
         $clientIp = trim($ipAddresses[0]);
-        return $clientIp;
+        // Validate it’s a real IPv4 or IPv6 address
+        if (filter_var($clientIp, FILTER_VALIDATE_IP)) {
+            return $clientIp;
+        }
     }
-    else {
-        return $_SERVER['REMOTE_ADDR'];
-    }
+
+    // Fallback to REMOTE_ADDR if no valid X-Forwarded-For header
+    return $_SERVER['REMOTE_ADDR'];
 }
 
 function handleRateLimit(string $route, int $maxRequests = 100) {

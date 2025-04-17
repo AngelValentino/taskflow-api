@@ -1,7 +1,12 @@
 RewriteEngine On
+
+# If the request is NOT for a real file, directory, or symlink
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-l
+
+# Route everything to index.php
 RewriteRule ^ index.php [QSA,L]
 
+# Pass the Authorization header to PHP
 SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1

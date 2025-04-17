@@ -5,8 +5,9 @@ namespace Api\Services;
 use ErrorException;
 use Throwable;
 
-# does not handle fatal errors
 class ErrorHandler {
+    private static string $logFile = __DIR__ . '/../../logs/errors.log';
+    
     public static function handleError(
         int $errno,
         string $errstr,
@@ -17,13 +18,44 @@ class ErrorHandler {
     }
 
     public static function handleException(Throwable $exception): void {
+        // Log the error
+        self::logError($exception);
+        
         http_response_code(500);
         echo json_encode([
-            'code' => $exception->getCode(),
-            'message' => $exception->getMessage(),
-            'file' => $exception->getFile(),
-            'line' => $exception->getLine()
+            'message' => 'An internal server error occurred. Please try again later.'
         ]);
         exit;
+    }
+
+    private static function logError(Throwable $exception): void {
+        $errorDetails = sprintf(
+            "[%s] ERROR: %s in %s on line %d\n\n", 
+            date('Y-m-d H:i:s'), 
+            $exception->getMessage(), 
+            $exception->getFile(), 
+            $exception->getLine()
+        );
+
+        if ($_ENV['APP_ENV'] === 'development') {
+            // Check if log directory exists, create if not
+            $logDir = __DIR__ . '/../../logs';
+            if (!file_exists($logDir)) {
+                mkdir($logDir, 0777, true);  // Create logs directory with proper permissions
+            }
+
+            // If log file doesn't exist, create it
+            if (!file_exists(self::$logFile)) {
+                touch(self::$logFile);  // Create the log file if it doesn't exist
+            }
+
+            // Write error details to the log file
+            file_put_contents(self::$logFile, $errorDetails, FILE_APPEND);
+        } 
+        else {
+            // For production (Heroku), write to stderr using error_log
+            // This will send logs to the Heroku log stream
+            error_log($errorDetails);
+        }
     }
 }
