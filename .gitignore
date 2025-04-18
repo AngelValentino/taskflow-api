@@ -2,3 +2,5 @@
 vendor
 schema.sql
 logs
+queries.sql
+certs

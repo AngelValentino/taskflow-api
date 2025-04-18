@@ -48,7 +48,17 @@ $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $router = new Router;
 
 function getDbInstance(): Database {
-    return new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD']);
+    $sslCaPath = null;
+    $sslCa = null;
+    
+    if ($_ENV['DB_SSL'] === 'true' && $_ENV['APP_ENV'] === 'development') {
+        $sslCaPath = __dir__ . '/../certs/ca-certificate.crt';
+    }
+    else if ($_ENV['DB_SSL'] === 'true' && $_ENV['APP_ENV'] === 'production') {
+        $sslCa = $_ENV['DB_SSL_CA'];
+    }
+
+    return new Database($_ENV['DB_HOST'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD'], $_ENV['DB_PORT'], $sslCaPath, $sslCa);
 }
 
 function getUserAuthServices(): array {
