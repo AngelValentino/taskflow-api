@@ -37,25 +37,18 @@ class ErrorHandler {
             $exception->getLine()
         );
 
-        if ($_ENV['APP_ENV'] === 'development') {
-            // Check if log directory exists, create if not
-            $logDir = __DIR__ . '/../../logs';
-            if (!file_exists($logDir)) {
-                mkdir($logDir, 0777, true);  // Create logs directory with proper permissions
-            }
-
-            // If log file doesn't exist, create it
-            if (!file_exists(self::$logFile)) {
-                touch(self::$logFile);  // Create the log file if it doesn't exist
-            }
-
-            // Write error details to the log file
-            file_put_contents(self::$logFile, $errorDetails, FILE_APPEND);
-        } 
-        else {
-            // For production (Heroku), write to stderr using error_log
-            // This will send logs to the Heroku log stream
-            error_log($errorDetails);
+        // Check if log directory exists, create if not
+        $logDir = __DIR__ . '/../../logs';
+        if (!file_exists($logDir)) {
+            mkdir($logDir, 0777, true);  // Create logs directory with proper permissions
         }
+
+        // If log file doesn't exist, create it
+        if (!file_exists(self::$logFile)) {
+            touch(self::$logFile);  // Create the log file if it doesn't exist
+        }
+
+        // Write error details to the log file
+        file_put_contents(self::$logFile, $errorDetails, FILE_APPEND);
     }
 }

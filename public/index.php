@@ -77,16 +77,6 @@ function getUserAuthServices(): array {
 }
 
 function getIpAddress() {
-    if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ipAddresses = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-        $clientIp = trim($ipAddresses[0]);
-        // Validate it’s a real IPv4 or IPv6 address
-        if (filter_var($clientIp, FILTER_VALIDATE_IP)) {
-            return $clientIp;
-        }
-    }
-
-    // Fallback to REMOTE_ADDR if no valid X-Forwarded-For header
     return $_SERVER['REMOTE_ADDR'];
 }
 
