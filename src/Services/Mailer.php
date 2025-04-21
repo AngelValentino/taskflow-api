@@ -20,10 +20,10 @@ class Mailer {
         $this->mail->isSMTP();
         $this->mail->Host = $mail_host;
         $this->mail->SMTPAuth = true;
-        $this->mail->Username = $sender_email;
+        $this->mail->Username = 'apikey';
         $this->mail->Password = $sender_password;
         $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $this->mail->Port = 587;
+        $this->mail->Port = 2525;
 
         // Default From
         $this->mail->setFrom($sender_email, 'TaskFlow');
