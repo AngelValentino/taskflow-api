@@ -98,15 +98,15 @@ function getRateLimitKey(string $route): string {
         : $route . ':' . $ipAddress;
 }
 
-function handleRateLimit(string $route, int $maxRequests = 100) {
+function handleRateLimit(string $route, int $maxRequests = 100, int $timeWindow = 60) {
     $redisConnection = new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']);
-    $rateLimiter = new RateLimiter($redisConnection, $maxRequests);
+    $rateLimiter = new RateLimiter($redisConnection, $maxRequests, $timeWindow);
     $rateLimitKey = getRateLimitKey($route);
 
     if ($rateLimiter->isRateLimited($rateLimitKey)) {
-        header('Retry-After: 60');
+        header('Retry-After: ' . $timeWindow);
         http_response_code(429);
-        echo json_encode(['message' => 'Rate limit exceeded. Please try again later.', 'rateLimitKey' => $rateLimitKey]);
+        echo json_encode(['message' => 'Rate limit exceeded. Please try again later.']);
         exit;
     }
 }
@@ -145,7 +145,7 @@ $router->add('/logout', function() {
 });
 
 $router->add('/refresh', function() {
-    handleRateLimit('refresh', 1);
+    handleRateLimit('refresh', 1, 240);
 
     $responder = new Responder;
     $auth_services = getUserAuthServices();
