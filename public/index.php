@@ -93,7 +93,7 @@ function getRateLimitKey(string $route): string {
     $deviceId = $_SERVER['HTTP_X_DEVICE_ID'] ?? null;
     $ipAddress = $_SERVER['REMOTE_ADDR'];
 
-    return $deviceId 
+    return $deviceId && preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/', $deviceId)
         ? $route . ':' . $deviceId . ':' . $ipAddress
         : $route . ':' . $ipAddress;
 }
