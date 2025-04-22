@@ -26,17 +26,30 @@ use Api\Services\RateLimiter;
 use Api\Services\Responder;
 use PHPMailer\PHPMailer\PHPMailer;
 
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS'); // Methods allowed for the API
-header('Access-Control-Allow-Headers: Content-Type, Authorization'); // Headers allowed in the request
-header('Content-type: application/json; charset=UTF-8');
+set_error_handler([ErrorHandler::class, 'handleError']); // Convert all PHP warnings/notices into ErrorException
+set_exception_handler([ErrorHandler::class, 'handleException']); // Handle uncaught exceptions
 
-// Load environment variables from the .env file first
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
-set_error_handler([ErrorHandler::class, 'handleError']); // Convert all PHP warnings/notices into ErrorException
-set_exception_handler([ErrorHandler::class, 'handleException']); // Handle uncaught exceptions
+$allowedOrigins = [
+    'development' => explode(',', $_ENV['DEVELOPMENT_ORIGINS']),
+    'production' => explode(',', $_ENV['PRODUCTION_ORIGINS'])
+];
+
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+if (in_array($origin, $allowedOrigins[$_ENV['APP_ENV']])) {
+    header('Access-Control-Allow-Origin: ' . $origin);
+} 
+else {
+    http_response_code(403);
+    exit;
+}
+
+header('Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS'); // Methods allowed for the API
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Device-ID'); // Headers allowed in the request
+header('Content-type: application/json; charset=UTF-8');
 
 // Handle preflight requests (OPTIONS)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -76,20 +89,24 @@ function getUserAuthServices(): array {
     ];
 }
 
-function getIpAddress() {
-    return $_SERVER['REMOTE_ADDR'];
+function getRateLimitKey(string $route): string {
+    $deviceId = $_SERVER['HTTP_X_DEVICE_ID'] ?? null;
+    $ipAddress = $_SERVER['REMOTE_ADDR'];
+
+    return $deviceId 
+        ? $route . ':' . $deviceId . ':' . $ipAddress
+        : $route . ':' . $ipAddress;
 }
 
 function handleRateLimit(string $route, int $maxRequests = 100) {
     $redisConnection = new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']);
     $rateLimiter = new RateLimiter($redisConnection, $maxRequests);
-    $userIp = getIpAddress();
-    $rateLimitKey = $route . ":" . $userIp;
+    $rateLimitKey = getRateLimitKey($route);
 
     if ($rateLimiter->isRateLimited($rateLimitKey)) {
         header('Retry-After: 60');
         http_response_code(429);
-        echo json_encode(['message' => 'Rate limit exceeded. Please try again later.', 'ip' => $userIp]);
+        echo json_encode(['message' => 'Rate limit exceeded. Please try again later.', 'rateLimitKey' => $rateLimitKey]);
         exit;
     }
 }
@@ -100,8 +117,8 @@ $router->add('/register', function() {
     $responder = new Responder;
     $database = getDbInstance();
     $user_gateway = new UserGateway($database);
-    $PHPMailer = new PHPMailer();
-    $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD']);
+    $PHPMailer = new PHPMailer(true);
+    $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD'], $_ENV['SENDER_USERNAME'], (int) $_ENV['SENDER_PORT']);
     $register_controller = new RegisterController($user_gateway, $mailer, $responder);
     
     $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
@@ -145,9 +162,9 @@ $router->add('/recover-password', function() {
     $user_gateway = new UserGateway($database);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
-    $PHPMailer = new PHPMailer();
-    $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD']);
-    $recover_password_controller = new RecoverPasswordController($_ENV['CLIENT_URL'], $user_gateway, $auth, $mailer, $responder);
+    $PHPMailer = new PHPMailer(true);
+    $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD'], $_ENV['SENDER_USERNAME'], (int) $_ENV['SENDER_PORT']);
+    $recover_password_controller = new RecoverPasswordController($_ENV['APP_ENV'] === 'production' ? $_ENV['CLIENT_URL_PROD'] : $_ENV['CLIENT_URL_DEV'], $user_gateway, $auth, $mailer, $responder);
     
     $recover_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
@@ -160,8 +177,8 @@ $router->add('/reset-password', function() {
     $user_gateway = new UserGateway($database);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
-    $PHPMailer = new PHPMailer();
-    $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD']);
+    $PHPMailer = new PHPMailer(true);
+    $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD'], $_ENV['SENDER_USERNAME'], (int) $_ENV['SENDER_PORT']);
     $reset_password_controller = new ResetPasswordController($user_gateway, $auth, $mailer, $responder);
     
     $reset_password_controller->processRequest($_SERVER['REQUEST_METHOD']);

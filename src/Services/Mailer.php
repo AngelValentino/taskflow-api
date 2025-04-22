@@ -12,7 +12,9 @@ class Mailer {
         PHPMailer $PHPMailer,
         string $mail_host,
         string $sender_email, 
-        string $sender_password
+        string $sender_password,
+        string $sender_username,
+        int $sender_port 
     ) {
         $this->mail = $PHPMailer;
         
@@ -20,10 +22,10 @@ class Mailer {
         $this->mail->isSMTP();
         $this->mail->Host = $mail_host;
         $this->mail->SMTPAuth = true;
-        $this->mail->Username = 'apikey';
+        $this->mail->Username = $sender_username;
         $this->mail->Password = $sender_password;
         $this->mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $this->mail->Port = 2525;
+        $this->mail->Port = $sender_port;
 
         // Default From
         $this->mail->setFrom($sender_email, 'TaskFlow');
