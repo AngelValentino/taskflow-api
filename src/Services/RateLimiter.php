@@ -12,7 +12,7 @@ class RateLimiter {
         $this->redis_conn = $redis->getConnection();
     }
 
-    public function authDeviceId(string $device_id) {
+    public function authDeviceId(?string $device_id) {
         if (!$device_id) {
             Responder::respondBadRequest('No device id found.');
             exit;

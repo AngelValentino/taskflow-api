@@ -33,7 +33,7 @@ class TaskController {
 
                     $sanitizedTasks = array_map(function($task) {
                         return array_map(function($value) {
-                            return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+                            return is_string($value) ? htmlspecialchars($value, ENT_QUOTES, 'UTF-8') : $value;
                         }, $task);
                     }, $tasks);
     
@@ -82,7 +82,7 @@ class TaskController {
             switch ($method) {
                 case 'GET':
                     $sanitizedTask = array_map(function($value) {
-                        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+                        return is_string($value) ? htmlspecialchars($value, ENT_QUOTES, 'UTF-8') : $value;
                     }, $task);
                     
                     echo json_encode($sanitizedTask);

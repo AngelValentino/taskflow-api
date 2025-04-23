@@ -18,7 +18,7 @@ class QuoteController {
             
             $sanitizedQuotes = array_map(function($quote) {
                 return array_map(function($value) {
-                    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+                    return is_string($value) ? htmlspecialchars($value, ENT_QUOTES, 'UTF-8') : $value;
                 }, $quote);
             }, $quotes);
 

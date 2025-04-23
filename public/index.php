@@ -80,7 +80,7 @@ $router->add('/logout', function() {
 });
 
 $router->add('/refresh', function() {
-    InitApiUtils::handleRateLimit('refresh', 1, 240);
+    InitApiUtils::handleRateLimit('refresh', 1, 240, 240);
 
     $auth_services = InitApiUtils::getUserAuthServices();
     $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
