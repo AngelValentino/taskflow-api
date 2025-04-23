@@ -9,7 +9,7 @@ use Api\Services\Responder;
 
 class LoginController {
     public function __construct(
-        private UserGateway $gateway,
+        private UserGateway $user_gateway,
         private RefreshTokenGateway $refresh_token_gateway,
         private Auth $auth
     ) {
@@ -26,7 +26,7 @@ class LoginController {
                 return;
             }
     
-            $user = $this->gateway->getByEmail($data['email']);
+            $user = $this->user_gateway->getByEmail($data['email']);
             $error = $this->getUserValidationErrorMessage($data, $user);
 
             if (isset($error)) {
@@ -44,7 +44,7 @@ class LoginController {
             echo json_encode([
                 'access_token' => $access_token['access_token'],
                 'refresh_token' => $access_token['refresh_token'],
-                'username' => htmlspecialchars($user['username'])
+                'username' => htmlspecialchars($user['username'], ENT_QUOTES, 'UTF-8')
             ]);
         } 
         else {

@@ -9,7 +9,7 @@ use DateTime;
 class TaskController {
     public function __construct(
         private int $user_id,
-        private TaskGateway $gateway
+        private TaskGateway $task_gateway
     ) { 
 
     }
@@ -26,10 +26,18 @@ class TaskController {
                 }
 
                 if ($is_counter) {
-                    echo json_encode($this->gateway->getUserTaskCount($this->user_id, $is_completed));
+                    echo json_encode($this->task_gateway->getUserTaskCount($this->user_id, $is_completed));
                 }
                 else {
-                    echo json_encode($this->gateway->getAllForUser($this->user_id, $is_completed, $search_value));
+                    $tasks = $this->task_gateway->getAllForUser($this->user_id, $is_completed, $search_value);
+
+                    $sanitizedTasks = array_map(function($task) {
+                        return array_map(function($value) {
+                            return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+                        }, $task);
+                    }, $tasks);
+    
+                    echo json_encode($sanitizedTasks);
                 }
             }
             else if ($method === 'POST') {
@@ -47,7 +55,7 @@ class TaskController {
                     return;
                 }
 
-                $task_id = $this->gateway->createForUser($this->user_id, $data);
+                $task_id = $this->task_gateway->createForUser($this->user_id, $data);
                 Responder::respondCreated("Task with ID: $task_id created");
             }
             else if ($method === 'DELETE') {
@@ -56,7 +64,7 @@ class TaskController {
                     $is_completed = filter_var($_GET['completed'] ?? null, FILTER_VALIDATE_BOOLEAN);
                 } 
 
-                $this->gateway->deleteAllForUser($this->user_id, $is_completed);
+                $this->task_gateway->deleteAllForUser($this->user_id, $is_completed);
                 Responder::respondNoContent();
             }
             else {
@@ -64,7 +72,7 @@ class TaskController {
             }
         } 
         else {
-            $task = $this->gateway->getForUser($this->user_id, $task_id);
+            $task = $this->task_gateway->getForUser($this->user_id, $task_id);
 
             if ($task === false) {
                 Responder::respondNotFound("Task with ID: $task_id not found");
@@ -73,8 +81,14 @@ class TaskController {
 
             switch ($method) {
                 case 'GET':
-                    echo json_encode($task);
+                    $sanitizedTask = array_map(function($value) {
+                        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+                    }, $task);
+                    
+                    echo json_encode($sanitizedTask);
+                    
                     break;
+                
                 case 'PATCH':
                     $data = (array) json_decode(file_get_contents('php://input'), true);
 
@@ -93,13 +107,17 @@ class TaskController {
                         return;
                     }
 
-                    $this->gateway->updateForUser($this->user_id, $task_id, $data);
+                    $this->task_gateway->updateForUser($this->user_id, $task_id, $data);
                     Responder::respondNoContent();
+                    
                     break;
+                
                 case 'DELETE':
-                    $this->gateway->deleteForUser($this->user_id, $task_id);
+                    $this->task_gateway->deleteForUser($this->user_id, $task_id);
                     Responder::respondNoContent();
+                    
                     break;
+                
                 default:
                     Responder::respondMethodNotAllowed('GET, PATCH, DELETE');
             }

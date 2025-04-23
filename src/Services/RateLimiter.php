@@ -6,10 +6,10 @@ use Api\Database\Redis;
 use Predis\Client;
 
 class RateLimiter {
-    private Client $redis;
+    private Client $redis_conn;
 
     public function __construct(Redis $redis) {
-        $this->redis = $redis->getConnection();
+        $this->redis_conn = $redis->getConnection();
     }
 
     public function authDeviceId(string $device_id) {
@@ -33,22 +33,22 @@ class RateLimiter {
         $counter_key = "{$base_key}:requests";
         $block_key = "{$base_key}:blocked";
     
-        if ($this->redis->exists($block_key)) {
+        if ($this->redis_conn->exists($block_key)) {
             Responder::respondTooManyRequests('Too many requests. Please try again later.', $block_window);            
             exit;
         }
 
-        $request_count = $this->redis->incr($counter_key);
+        $request_count = $this->redis_conn->incr($counter_key);
         
         if ($request_count === 1) {
-            $this->redis->expire($counter_key, $window);
+            $this->redis_conn->expire($counter_key, $window);
         }
     
         if ((int) $request_count > $max_requests) {
             $minutes = ceil($block_window / 60);
             $label = (int) $minutes === 1 ? 'minute' : 'minutes';
 
-            $this->redis->setex($block_key, $block_window, 1);  // Block for 60 seconds
+            $this->redis_conn->setex($block_key, $block_window, 1);  // Block for 60 seconds
             
             Responder::respondTooManyRequests("Too many requests. You have been blocked for {$minutes} {$label}.", $block_window);
             ErrorHandler::logAudit("IP {$ip} blocked on route '{$route}' due to {$request_count} requests (max allowed: {$max_requests})");
@@ -62,25 +62,25 @@ class RateLimiter {
         $set_key = "ip:{$ip}:deviceIds";
         $block_key = "ip:{$ip}:blocked";
     
-        if ($this->redis->exists($block_key)) {
+        if ($this->redis_conn->exists($block_key)) {
             Responder::respondTooManyRequests('Too many device switches. Try again later.', $block_window);
             exit;
         }
     
         // Add the device ID to the set
-        $this->redis->sAdd($set_key, $device_id);
+        $this->redis_conn->sAdd($set_key, $device_id);
         // Set expiry on the set, expire once window ends
-        $this->redis->expire($set_key, $window);
+        $this->redis_conn->expire($set_key, $window);
         // Count how many unique device IDs were seen
-        $count = $this->redis->sCard($set_key);
+        $count = $this->redis_conn->sCard($set_key);
     
         // If more device IDs changes than allowed, block IP for the time needed
         if ((int) $count > $max_ids) {
             $minutes = ceil($block_window / 60);
             $label = (int) $minutes === 1 ? 'minute' : 'minutes';
             
-            $this->redis->setex($block_key, $block_window, 1);
-            $this->redis->del($set_key);
+            $this->redis_conn->setex($block_key, $block_window, 1);
+            $this->redis_conn->del($set_key);
 
             Responder::respondTooManyRequests("Too many device IDs detected. You have been blocked for {$minutes} {$label}.", $block_window);
             ErrorHandler::logAudit("IP {$ip} blocked for device ID rotation. Seen IDs: {$count} (limit: {$max_ids})");

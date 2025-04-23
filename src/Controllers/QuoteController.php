@@ -7,16 +7,23 @@ use Api\Services\Responder;
 
 class QuoteController {
     public function __construct(
-        private QuoteGateway $gateway
+        private QuoteGateway $quote_gateway
     ) {
         
     }
 
     public function processRequest(string $method): void {
         if ($method === 'GET') {
-            $quotes = $this->gateway->getAllQuotes();
-            echo json_encode($quotes);
-        } 
+            $quotes = $this->quote_gateway->getAllQuotes();
+            
+            $sanitizedQuotes = array_map(function($quote) {
+                return array_map(function($value) {
+                    return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+                }, $quote);
+            }, $quotes);
+
+            echo json_encode($sanitizedQuotes);
+        }
         else {
             Responder::respondMethodNotAllowed('GET');
         }

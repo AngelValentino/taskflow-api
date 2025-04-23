@@ -10,7 +10,7 @@ use Api\Services\Responder;
 class RefreshTokenController {
     public function __construct(
         private UserGateway $user_gateway,
-        private RefreshTokenGateway $gateway,
+        private RefreshTokenGateway $refresh_token_gateway,
         private Auth $auth
     ) {
 
@@ -28,7 +28,7 @@ class RefreshTokenController {
             if (!$this->auth->authenticateAccessToken(false, $data['token'], 'refresh')) return;
             $user_id = $this->auth->getUserId();
 
-            $refresh_token = $this->gateway->getByToken($data['token']);
+            $refresh_token = $this->refresh_token_gateway->getByToken($data['token']);
 
             if ($refresh_token === false) {
                 Responder::respondBadRequest('Invalid token(not on whitelist).');
@@ -47,14 +47,14 @@ class RefreshTokenController {
             $access_token = $this->auth->getAccessToken($user);
 
             // Update db with the newly created refresh token
-            $this->gateway->delete($data['token']);
-            $this->gateway->create($access_token['refresh_token'], $access_token['refresh_token_expiry']);
+            $this->refresh_token_gateway->delete($data['token']);
+            $this->refresh_token_gateway->create($access_token['refresh_token'], $access_token['refresh_token_expiry']);
 
             // Send JSON
             echo json_encode([
                 'access_token' => $access_token['access_token'],
                 'refresh_token' => $access_token['refresh_token'],
-                'username' => htmlspecialchars($user['username'])
+                'username' => htmlspecialchars($user['username'], ENT_QUOTES, 'UTF-8')
             ]);
         } 
         else {

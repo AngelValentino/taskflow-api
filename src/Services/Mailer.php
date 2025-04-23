@@ -6,17 +6,14 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 class Mailer {
-    private PHPMailer $mail;
-
     public function __construct(
-        PHPMailer $PHPMailer,
+        private PHPMailer $mail,
         string $mail_host,
         string $sender_email, 
         string $sender_password,
         string $sender_username,
         int $sender_port 
     ) {
-        $this->mail = $PHPMailer;
         
         // SMTP configuration
         $this->mail->isSMTP();

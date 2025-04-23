@@ -8,7 +8,7 @@ use Api\Services\Responder;
 
 class RegisterController {
     public function __construct(
-        private UserGateway $gateway,
+        private UserGateway $user_gateway,
         private Mailer $mailer
     ) {
 
@@ -25,7 +25,7 @@ class RegisterController {
                 return;
             }
 
-            $this->gateway->create($data['username'], $data['email'], $data['password']);
+            $this->user_gateway->create($data['username'], $data['email'], $data['password']);
             $this->mailer->sendWelcomeEmail($data['email'], $data['username']);
 
             Responder::respondCreated('User created.');
@@ -42,7 +42,7 @@ class RegisterController {
         else if (strlen($username) > 20) {
             return 'Username cannot exceed 20 characters.';
         }
-        else if ($this->gateway->getByUsername($username)) {
+        else if ($this->user_gateway->getByUsername($username)) {
             return 'Username is already taken, please try another one.';
         }
         else {
@@ -60,7 +60,7 @@ class RegisterController {
         else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return 'Enter a valid email address.';
         }
-        else if ($this->gateway->getByEmail($email)) {
+        else if ($this->user_gateway->getByEmail($email)) {
             return 'Email address is already taken, please try another one.';
         }
         else {
