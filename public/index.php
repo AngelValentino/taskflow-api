@@ -89,7 +89,7 @@ function getUserAuthServices(): array {
     ];
 }
 
-function getAndVerifyDeviceId() {
+function getAndVerifyDeviceId(): string {
     $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']), new Responder, ErrorHandler::class);
     $deviceId = $_SERVER['HTTP_X_DEVICE_ID'] ?? null;
     $rateLimiter->authDeviceId($deviceId);
@@ -100,7 +100,7 @@ function getAndVerifyDeviceId() {
 $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']), new Responder, ErrorHandler::class);
 $rateLimiter->detectDeviceIdRotation($_SERVER['REMOTE_ADDR'], getAndVerifyDeviceId());
 
-function handleRateLimit(string $route, int $max_requests = 5, int $window = 60, int $block_window = 60) {
+function handleRateLimit(string $route, int $max_requests = 5, int $window = 60, int $block_window = 60): void {
     $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']), new Responder, ErrorHandler::class);
     $rateLimiter->detectRateLimit($_SERVER['REMOTE_ADDR'], getAndVerifyDeviceId(), $route, $window, $max_requests, $block_window);
 }

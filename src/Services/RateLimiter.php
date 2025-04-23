@@ -51,7 +51,7 @@ class RateLimiter {
     
         if ((int) $request_count > $max_requests) {
             $minutes = ceil($block_window / 60);
-            $label = $minutes === 1 ? 'minute' : 'minutes';
+            $label = (int) $minutes === 1 ? 'minute' : 'minutes';
 
             $this->redis->setex($block_key, $block_window, 1);  // Block for 60 seconds
             
@@ -82,7 +82,7 @@ class RateLimiter {
         // If more device IDs changes than allowed, block IP for the time needed
         if ((int) $count > $max_ids) {
             $minutes = ceil($block_window / 60);
-            $label = $minutes === 1 ? 'minute' : 'minutes';
+            $label = (int) $minutes === 1 ? 'minute' : 'minutes';
             
             $this->redis->setex($blockKey, $block_window, 1);
             $this->redis->del($setKey);
