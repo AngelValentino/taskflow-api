@@ -55,7 +55,7 @@ class ErrorHandler {
 
     
     public static function logAudit(string $message): void {
-        $logEntry = sprintf("[%s] AUDIT: %s\n", date('Y-m-d H:i:s'), $message);
+        $logEntry = sprintf("[%s] AUDIT: %s\n\n", date('Y-m-d H:i:s'), $message);
 
         $logDir = __DIR__ . '/../../logs';
         if (!file_exists($logDir)) {

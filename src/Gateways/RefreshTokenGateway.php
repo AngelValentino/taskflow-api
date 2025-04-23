@@ -57,7 +57,8 @@ class RefreshTokenGateway {
         $sql = "DELETE FROM refresh_tokens
                 WHERE expires_at < UNIX_TIMESTAMP()";
 
-        $stmt = $this->conn->query($sql);
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
         
         return $stmt->rowCount();
     }
