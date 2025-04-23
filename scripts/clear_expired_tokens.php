@@ -16,20 +16,15 @@ $dotenv->load();
 $database = InitApiUtils::getDbInstance();
 $refreshTokenGateway = new RefreshTokenGateway($database, $_ENV['SECRET_KEY']);
 $row_count = $refreshTokenGateway->deleteExpired();
+$timestamp = date('Y-m-d H:i:s');
 
 if ($row_count > 0) {
-    ErrorHandler::logAudit("Successfully deleted {$row_count} expired refresh tokens.");
-    
-    echo json_encode([
-        'status' => 'success',
-        'message' => "Successfully deleted {$row_count} expired refresh tokens."
-    ]) . PHP_EOL;
+    $logMessage = "Successfully deleted {$row_count} expired refresh tokens.";
+    ErrorHandler::logAudit($logMessage);
+    echo "[{$timestamp}] {$logMessage}" . PHP_EOL;
 } 
 else {
-    ErrorHandler::logAudit("No expired refresh tokens found to delete.");
-    
-    echo json_encode([
-        'status' => 'info',
-        'message' => 'No expired refresh tokens found to delete.'
-    ]) . PHP_EOL;
+    $logMessage = "No expired refresh tokens found to delete.";
+    ErrorHandler::logAudit($logMessage);
+    echo "[{$timestamp}] {$logMessage}" . PHP_EOL;
 }
