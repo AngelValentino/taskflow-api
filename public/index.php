@@ -46,18 +46,17 @@ $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $router = new Router;
 
 // Handle device rotation
-$rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']), new Responder, ErrorHandler::class);
+$rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']));
 $rateLimiter->detectDeviceIdRotation($_SERVER['REMOTE_ADDR'], InitApiUtils::getAndVerifyDeviceId());
 
 $router->add('/register', function() {
     InitApiUtils::handleRateLimit('register', 5);
     
-    $responder = new Responder;
     $database = InitApiUtils::getDbInstance();
     $user_gateway = new UserGateway($database);
     $PHPMailer = new PHPMailer(true);
     $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD'], $_ENV['SENDER_USERNAME'], (int) $_ENV['SENDER_PORT']);
-    $register_controller = new RegisterController($user_gateway, $mailer, $responder);
+    $register_controller = new RegisterController($user_gateway, $mailer);
     
     $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
@@ -65,9 +64,8 @@ $router->add('/register', function() {
 $router->add('/login', function() {
     InitApiUtils::handleRateLimit('login', 5);
 
-    $responder = new Responder;
     $auth_services = InitApiUtils::getUserAuthServices();
-    $login_controller = new LoginController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth'], $responder);
+    $login_controller = new LoginController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
     
     $login_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
@@ -75,9 +73,8 @@ $router->add('/login', function() {
 $router->add('/logout', function() {
     InitApiUtils::handleRateLimit('logout', 5);
 
-    $responder = new Responder;
     $auth_services = InitApiUtils::getUserAuthServices();
-    $logout_controller = new LogoutController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth'], $responder);
+    $logout_controller = new LogoutController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
     
     $logout_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
@@ -85,9 +82,8 @@ $router->add('/logout', function() {
 $router->add('/refresh', function() {
     InitApiUtils::handleRateLimit('refresh', 1, 240);
 
-    $responder = new Responder;
     $auth_services = InitApiUtils::getUserAuthServices();
-    $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth'], $responder);
+    $refresh_token_controller = new RefreshTokenController($auth_services['user_gateway'], $auth_services['refresh_token_gateway'], $auth_services['auth']);
     
     $refresh_token_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
@@ -95,14 +91,13 @@ $router->add('/refresh', function() {
 $router->add('/recover-password', function() {
     InitApiUtils::handleRateLimit('recover-password', 5);
 
-    $responder = new Responder;
     $database = InitApiUtils::getDbInstance();
     $user_gateway = new UserGateway($database);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
     $PHPMailer = new PHPMailer(true);
     $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD'], $_ENV['SENDER_USERNAME'], (int) $_ENV['SENDER_PORT']);
-    $recover_password_controller = new RecoverPasswordController($_ENV['APP_ENV'] === 'production' ? $_ENV['CLIENT_URL_PROD'] : $_ENV['CLIENT_URL_DEV'], $user_gateway, $auth, $mailer, $responder);
+    $recover_password_controller = new RecoverPasswordController($_ENV['APP_ENV'] === 'production' ? $_ENV['CLIENT_URL_PROD'] : $_ENV['CLIENT_URL_DEV'], $user_gateway, $auth, $mailer);
     
     $recover_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
@@ -110,14 +105,13 @@ $router->add('/recover-password', function() {
 $router->add('/reset-password', function() {
     InitApiUtils::handleRateLimit('reset-password', 10);
     
-    $responder = new Responder;
     $database = InitApiUtils::getDbInstance();
     $user_gateway = new UserGateway($database);
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
     $PHPMailer = new PHPMailer(true);
     $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD'], $_ENV['SENDER_USERNAME'], (int) $_ENV['SENDER_PORT']);
-    $reset_password_controller = new ResetPasswordController($user_gateway, $auth, $mailer, $responder);
+    $reset_password_controller = new ResetPasswordController($user_gateway, $auth, $mailer);
     
     $reset_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
@@ -130,10 +124,9 @@ $router->add('/tasks', function() {
     if (!$auth->authenticateAccessToken(true, null, 'access')) exit;
     $user_id = $auth->getUserId();
 
-    $responder = new Responder;
     $database = InitApiUtils::getDbInstance();
     $task_gateway = new TaskGateway($database);
-    $task_controller = new TaskController($user_id, $task_gateway, $responder);
+    $task_controller = new TaskController($user_id, $task_gateway);
     
     $task_controller->processRequest($_SERVER['REQUEST_METHOD'], null);
 });
@@ -147,10 +140,9 @@ $router->add('/tasks/{id}', function($task_id) {
     if (!$auth->authenticateAccessToken(true, null, 'access')) exit;
     $user_id = $auth->getUserId();
 
-    $responder = new Responder;
     $database = InitApiUtils::getDbInstance();
     $task_gateway = new TaskGateway($database);
-    $task_controller = new TaskController($user_id, $task_gateway, $responder);
+    $task_controller = new TaskController($user_id, $task_gateway);
     
     $task_controller->processRequest($_SERVER['REQUEST_METHOD'], $task_id);
 });
@@ -158,10 +150,9 @@ $router->add('/tasks/{id}', function($task_id) {
 $router->add('/quotes', function() {
     InitApiUtils::handleRateLimit('quotes', 1);
 
-    $responder = new Responder;
     $database = InitApiUtils::getDbInstance();
     $quote_gateway = new QuoteGateway($database); 
-    $quote_controller = new QuoteController($quote_gateway, $responder);
+    $quote_controller = new QuoteController($quote_gateway);
     
     $quote_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });

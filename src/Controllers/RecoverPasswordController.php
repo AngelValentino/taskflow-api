@@ -12,8 +12,7 @@ class RecoverPasswordController {
         private string $client_url,
         private UserGateway $user_gateway,
         private Auth $auth,
-        private Mailer $mailer,
-        private Responder $responder
+        private Mailer $mailer
     ) {
         
     }
@@ -24,7 +23,7 @@ class RecoverPasswordController {
             $email = $data['email'];
 
             if (!isset($email)) {
-                $this->responder->respondBadRequest('Email is required');
+                Responder::respondBadRequest('Email is required');
                 return;
             }
 
@@ -40,7 +39,7 @@ class RecoverPasswordController {
             }
         }
         else {
-            $this->responder->respondMethodNotAllowed('POST');
+            Responder::respondMethodNotAllowed('POST');
         }
     }
 }

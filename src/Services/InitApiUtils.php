@@ -30,14 +30,14 @@ class InitApiUtils {
     }
 
     public static function getAndVerifyDeviceId(): string {
-        $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']), new Responder, ErrorHandler::class);
+        $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']));
         $deviceId = $_SERVER['HTTP_X_DEVICE_ID'] ?? null;
         $rateLimiter->authDeviceId($deviceId);
         return $deviceId;
     }
 
     public static function handleRateLimit(string $route, int $max_requests = 5, int $window = 60, int $block_window = 60): void {
-        $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']), new Responder, ErrorHandler::class);
+        $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']));
         $rateLimiter->detectRateLimit($_SERVER['REMOTE_ADDR'], self::getAndVerifyDeviceId(), $route, $window, $max_requests, $block_window);
     }
 

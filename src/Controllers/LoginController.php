@@ -11,8 +11,7 @@ class LoginController {
     public function __construct(
         private UserGateway $gateway,
         private RefreshTokenGateway $refresh_token_gateway,
-        private Auth $auth,
-        private Responder $responder
+        private Auth $auth
     ) {
         
     }
@@ -31,7 +30,7 @@ class LoginController {
             $error = $this->getUserValidationErrorMessage($data, $user);
 
             if (isset($error)) {
-                $this->responder->respondUnauthorized($error);
+                Responder::respondUnauthorized($error);
                 return;
             }
 
@@ -49,7 +48,7 @@ class LoginController {
             ]);
         } 
         else {
-            $this->responder->respondMethodNotAllowed('POST');
+            Responder::respondMethodNotAllowed('POST');
         }
     }
 

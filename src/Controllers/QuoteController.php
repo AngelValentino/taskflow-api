@@ -7,8 +7,7 @@ use Api\Services\Responder;
 
 class QuoteController {
     public function __construct(
-        private QuoteGateway $gateway,
-        private Responder $responder
+        private QuoteGateway $gateway
     ) {
         
     }
@@ -19,7 +18,7 @@ class QuoteController {
             echo json_encode($quotes);
         } 
         else {
-            $this->responder->respondMethodNotAllowed('GET');
+            Responder::respondMethodNotAllowed('GET');
         }
     }
 }

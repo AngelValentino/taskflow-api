@@ -9,8 +9,7 @@ use DateTime;
 class TaskController {
     public function __construct(
         private int $user_id,
-        private TaskGateway $gateway,
-        private Responder $responder,
+        private TaskGateway $gateway
     ) { 
 
     }
@@ -44,12 +43,12 @@ class TaskController {
                 $errors = $this->getValidationErrors($data);
                
                 if (!empty($errors)) {
-                    $this->responder->respondUnprocessableEntity($errors);
+                    Responder::respondUnprocessableEntity($errors);
                     return;
                 }
 
                 $task_id = $this->gateway->createForUser($this->user_id, $data);
-                $this->responder->respondCreated("Task with ID: $task_id created");
+                Responder::respondCreated("Task with ID: $task_id created");
             }
             else if ($method === 'DELETE') {
                 $is_completed = $_GET['completed'] ?? null;
@@ -58,17 +57,17 @@ class TaskController {
                 } 
 
                 $this->gateway->deleteAllForUser($this->user_id, $is_completed);
-                $this->responder->respondNoContent();
+                Responder::respondNoContent();
             }
             else {
-                $this->responder->respondMethodNotAllowed('GET, POST, DELETE');
+                Responder::respondMethodNotAllowed('GET, POST, DELETE');
             }
         } 
         else {
             $task = $this->gateway->getForUser($this->user_id, $task_id);
 
             if ($task === false) {
-                $this->responder->respondNotFound("Task with ID: $task_id not found");
+                Responder::respondNotFound("Task with ID: $task_id not found");
                 return;
             }
 
@@ -90,19 +89,19 @@ class TaskController {
                     $errors = $this->getUpdateValidationErrors($data);
                    
                     if (!empty($errors)) {
-                        $this->responder->respondUnprocessableEntity($errors);
+                        Responder::respondUnprocessableEntity($errors);
                         return;
                     }
 
                     $this->gateway->updateForUser($this->user_id, $task_id, $data);
-                    $this->responder->respondNoContent();
+                    Responder::respondNoContent();
                     break;
                 case 'DELETE':
                     $this->gateway->deleteForUser($this->user_id, $task_id);
-                    $this->responder->respondNoContent();
+                    Responder::respondNoContent();
                     break;
                 default:
-                    $this->responder->respondMethodNotAllowed('GET, PATCH, DELETE');
+                    Responder::respondMethodNotAllowed('GET, PATCH, DELETE');
             }
         }
     }

@@ -9,8 +9,7 @@ use Api\Services\Responder;
 class RegisterController {
     public function __construct(
         private UserGateway $gateway,
-        private Mailer $mailer,
-        private Responder $responder
+        private Mailer $mailer
     ) {
 
     }
@@ -22,17 +21,17 @@ class RegisterController {
             $errors = $this->getValidationErrors($data);
 
             if (!empty($errors)) {
-                $this->responder->respondUnprocessableEntity($errors);
+                Responder::respondUnprocessableEntity($errors);
                 return;
             }
 
             $this->gateway->create($data['username'], $data['email'], $data['password']);
             $this->mailer->sendWelcomeEmail($data['email'], $data['username']);
 
-            $this->responder->respondCreated('User created.');
+            Responder::respondCreated('User created.');
         } 
         else {
-            $this->responder->respondMethodNotAllowed('POST');
+            Responder::respondMethodNotAllowed('POST');
         }
     }
 

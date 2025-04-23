@@ -11,8 +11,7 @@ class ResetPasswordController {
     public function __construct(
         private UserGateway $user_gateway,
         private Auth $auth,
-        private Mailer $mailer,
-        private Responder $responder
+        private Mailer $mailer
     ) {
 
     }
@@ -22,14 +21,14 @@ class ResetPasswordController {
             $data = json_decode(file_get_contents('php://input'), true);
 
             if (!isset($data['token'])) {
-                $this->responder->respondBadRequest('Reset password token is required.');
+                Responder::respondBadRequest('Reset password token is required.');
                 return;
             }
 
             $errors = $this->getValidationErrors($data);
             
             if (!empty($errors)) {
-                $this->responder->respondUnprocessableEntity($errors);
+                Responder::respondUnprocessableEntity($errors);
                 return;
             }
 
@@ -39,10 +38,10 @@ class ResetPasswordController {
             
             $this->user_gateway->updatePassword($user_id, $data['password']);
             $this->mailer->sendPasswordChangedConfirmation($user_email);
-            $this->responder->respondNoContent();
+            Responder::respondNoContent();
         }
         else {
-            $this->responder->respondMethodNotAllowed('POST');
+            Responder::respondMethodNotAllowed('POST');
         }
     }
 

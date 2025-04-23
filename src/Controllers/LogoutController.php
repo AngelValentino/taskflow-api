@@ -11,8 +11,7 @@ class LogoutController {
     public function __construct(
         private UserGateway $user_gateway,
         private RefreshTokenGateway $refresh_token_gateway,
-        private Auth $auth,
-        private Responder $responder
+        private Auth $auth
     ) {
         
     }
@@ -22,7 +21,7 @@ class LogoutController {
             $data = (array) json_decode(file_get_contents('php://input'), true);
 
             if (empty($data['token'])) {
-                $this->responder->respondBadRequest('Missing token.');
+                Responder::respondBadRequest('Missing token.');
                 return;
             }
 
@@ -35,15 +34,15 @@ class LogoutController {
             $user = $this->user_gateway->getById($user_id);
 
             if ($user === false) {
-                $this->responder->respondUnauthorized('Invalid authentication.');
+                Responder::respondUnauthorized('Invalid authentication.');
                 return;
             }
 
             $this->refresh_token_gateway->delete($data['token']);
-            $this->responder->respondNoContent();
+            Responder::respondNoContent();
         }
         else {
-            $this->responder->respondMethodNotAllowed('POST');
+            Responder::respondMethodNotAllowed('POST');
         }
     }
 }

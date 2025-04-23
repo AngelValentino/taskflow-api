@@ -69,7 +69,7 @@ class Mailer {
             $this->mail->send();
         } 
         catch (Exception $e) {
-            throw new Exception("Failed to send the email: " . $e->getMessage());
+            throw new Exception('Failed to send reset password email: ' . $e->getMessage());
         }
     }
 
@@ -103,7 +103,7 @@ class Mailer {
             $this->mail->send();
         } 
         catch (Exception $e) {
-            throw new Exception("Failed to send password changed confirmation: " . $e->getMessage());
+            throw new Exception('Failed to send password changed confirmation: ' . $e->getMessage());
         }
     }
 
@@ -137,7 +137,7 @@ class Mailer {
             $this->mail->send();
         } 
         catch (Exception $e) {
-            throw new Exception("Failed to send welcome email: " . $e->getMessage());
+            throw new Exception('Failed to send welcome email: ' . $e->getMessage());
         }
     }
 }

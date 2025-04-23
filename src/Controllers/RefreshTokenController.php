@@ -11,8 +11,7 @@ class RefreshTokenController {
     public function __construct(
         private UserGateway $user_gateway,
         private RefreshTokenGateway $gateway,
-        private Auth $auth,
-        private Responder $responder
+        private Auth $auth
     ) {
 
     }
@@ -22,7 +21,7 @@ class RefreshTokenController {
             $data = (array) json_decode(file_get_contents('php://input'), true);
 
             if (empty($data['token'])) {
-                $this->responder->respondBadRequest('Missing token.');
+                Responder::respondBadRequest('Missing token.');
                 return;
             }
 
@@ -32,7 +31,7 @@ class RefreshTokenController {
             $refresh_token = $this->gateway->getByToken($data['token']);
 
             if ($refresh_token === false) {
-                $this->responder->respondBadRequest('Invalid token(not on whitelist).');
+                Responder::respondBadRequest('Invalid token(not on whitelist).');
                 return;
             }
 
@@ -40,7 +39,7 @@ class RefreshTokenController {
             $user = $this->user_gateway->getById($user_id);
 
             if ($user === false) {
-                $this->responder->respondUnauthorized('Invalid authentication.');
+                Responder::respondUnauthorized('Invalid authentication.');
                 return;
             }
 
@@ -59,7 +58,7 @@ class RefreshTokenController {
             ]);
         } 
         else {
-            $this->responder->respondMethodNotAllowed('POST');
+            Responder::respondMethodNotAllowed('POST');
             return;
         }
     }
