@@ -3,6 +3,12 @@
 namespace Api\Services;
 
 class Responder {
+    public function respondTooManyRequests(string $message, int $window): void {
+        header('Retry-After: ' . $window);
+        http_response_code(429);
+        echo json_encode(['message' => $message]);
+    }
+
     public function respondUnprocessableEntity(array $errors):void {
         http_response_code(422);
         echo json_encode(['errors' => $errors]);
@@ -28,12 +34,12 @@ class Responder {
         echo json_encode(['message' => $message]);
     }
 
+    public function respondNoContent(): void {
+        http_response_code(204);
+    }
+
     public function respondCreated($message): void {
         http_response_code(201);
         echo json_encode(['message' => $message]);
-    }
-
-    public function respondNoContent(): void {
-        http_response_code(204);
     }
 }

@@ -89,26 +89,20 @@ function getUserAuthServices(): array {
     ];
 }
 
-function getRateLimitKey(string $route): string {
+function getAndVerifyDeviceId() {
+    $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']), new Responder, ErrorHandler::class);
     $deviceId = $_SERVER['HTTP_X_DEVICE_ID'] ?? null;
-    $ipAddress = $_SERVER['REMOTE_ADDR'];
-
-    return $deviceId && preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/', $deviceId)
-        ? $route . ':' . $deviceId . ':' . $ipAddress
-        : $route . ':' . $ipAddress;
+    $rateLimiter->authDeviceId($deviceId);
+    return $deviceId;
 }
 
-function handleRateLimit(string $route, int $maxRequests = 100, int $timeWindow = 60) {
-    $redisConnection = new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']);
-    $rateLimiter = new RateLimiter($redisConnection, $maxRequests, $timeWindow);
-    $rateLimitKey = getRateLimitKey($route);
+// Handle device rotation
+$rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']), new Responder, ErrorHandler::class);
+$rateLimiter->detectDeviceIdRotation($_SERVER['REMOTE_ADDR'], getAndVerifyDeviceId());
 
-    if ($rateLimiter->isRateLimited($rateLimitKey)) {
-        header('Retry-After: ' . $timeWindow);
-        http_response_code(429);
-        echo json_encode(['message' => 'Rate limit exceeded. Please try again later.']);
-        exit;
-    }
+function handleRateLimit(string $route, int $max_requests = 5, int $window = 60, int $block_window = 60) {
+    $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']), new Responder, ErrorHandler::class);
+    $rateLimiter->detectRateLimit($_SERVER['REMOTE_ADDR'], getAndVerifyDeviceId(), $route, $window, $max_requests, $block_window);
 }
 
 $router->add('/register', function() {
@@ -201,7 +195,7 @@ $router->add('/tasks', function() {
 });
 
 $router->add('/tasks/{id}', function($task_id) {
-    handleRateLimit("task:{$task_id}", 50);
+    handleRateLimit("tasks:taskId:{$task_id}", 50);
 
     $codec = new JWTCodec($_ENV['SECRET_KEY']);
     $auth = new Auth($codec);
