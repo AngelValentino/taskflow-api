@@ -22,6 +22,7 @@ use Api\Gateways\TaskGateway;
 use Api\Services\Mailer;
 use Api\Services\Router;
 use Api\Services\RateLimiter;
+use Api\Services\Responder;
 use PHPMailer\PHPMailer\PHPMailer;
 
 set_error_handler([ErrorHandler::class, 'handleError']); // Convert all PHP warnings/notices into ErrorException
@@ -39,6 +40,12 @@ header('Content-type: application/json; charset=UTF-8');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200); // Return a 200 OK response for OPTIONS
     exit; // Exit early to avoid further processing
+}
+
+// Handle maintenance
+if (file_exists(__DIR__ . '/../maintenance.flag')) {
+    Responder::respondServiceUnavailable();
+    exit;
 }
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

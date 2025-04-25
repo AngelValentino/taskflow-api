@@ -3,6 +3,13 @@
 namespace Api\Services;
 
 class Responder {
+    public static function respondServiceUnavailable() {
+        http_response_code(503);
+        echo json_encode([
+            'message' => 'Service temporarily unavailable due to maintenance. Please try again later.'
+        ]);
+    }
+
     public static function respondTooManyRequests(string $message, int $window): void {
         header('Retry-After: ' . $window);
         http_response_code(429);
