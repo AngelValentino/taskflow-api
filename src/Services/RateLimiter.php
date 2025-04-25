@@ -51,45 +51,65 @@ class RateLimiter {
             $this->redis_conn->setex($block_key, $block_window, 1);  // Block for 60 seconds
             
             Responder::respondTooManyRequests("Too many requests. You have been blocked for {$minutes} {$label}.", $block_window);
-            ErrorHandler::logAudit("IP {$ip} blocked on route '{$route}' due to {$request_count} requests (max allowed: {$max_requests})");
+            ErrorHandler::logAudit("RATE_LIMIT -> IP {$ip} blocked on route '{$route}' due to {$request_count} requests (max allowed: {$max_requests})");
 
             exit;
         }
     }
 
-    // Detect too many Device ID rotations from the same IP within the time window
-    public function detectDeviceIdRotation(string $ip, string $device_id, int $window = 300, int $max_ids = 2, int $block_window = 300): void {
-        $set_key = "ip:{$ip}:deviceIds";
-        $block_key = "ip:{$ip}:blocked";
+    private function camelCaseToSpaced($input): string {
+        return preg_replace('/([a-z])([A-Z])/', '$1 $2', $input);
+    }
+
+    private function detectRotation(
+        string $set_key_owner,
+        string $value_to_track,
+        string $ip, 
+        string $device_id, 
+        int $window = 300, 
+        int $max_count = 3, 
+        int $block_window = 300
+    ): void {
+        $owner = strtolower($set_key_owner);
+        $tracked_value = $owner === 'ip' ? $device_id : $ip;
+        $set_key_value = $owner === 'ip' ? $ip : $device_id;
+        $set_key = "{$set_key_owner}:{$set_key_value}:{$value_to_track}s";
+        $block_key = "{$set_key_owner}:{$set_key_value}:blocked";
+        $rotationType = $owner === 'ip' ? 'DEVICE_ID_ROTATION' : 'IP_ROTATION';
     
         if ($this->redis_conn->exists($block_key)) {
-            Responder::respondTooManyRequests('Too many device switches. Try again later.', $block_window);
+            Responder::respondTooManyRequests("Too many {$this->camelCaseToSpaced($value_to_track)} switches. Try again later.", $block_window);
             exit;
         }
     
         // Add the device ID to the set
-        $this->redis_conn->sAdd($set_key, $device_id);
+        $this->redis_conn->sAdd($set_key, $tracked_value);
         // Set expiry on the set, expire once window ends
         $this->redis_conn->expire($set_key, $window);
         // Count how many unique device IDs were seen
         $count = $this->redis_conn->sCard($set_key);
-    
+        
         // If more device IDs changes than allowed, block IP for the time needed
-        if ((int) $count > $max_ids) {
+        if ((int) $count > $max_count) {
             $minutes = ceil($block_window / 60);
             $label = (int) $minutes === 1 ? 'minute' : 'minutes';
-            
+
             $this->redis_conn->setex($block_key, $block_window, 1);
             $this->redis_conn->del($set_key);
 
-            Responder::respondTooManyRequests("Too many device IDs detected. You have been blocked for {$minutes} {$label}.", $block_window);
-            ErrorHandler::logAudit("IP {$ip} blocked for device ID rotation. Seen IDs: {$count} (limit: {$max_ids})");
+            $actor = $owner === 'ip' ? "IP {$ip}" : "Device ID {$device_id}";
+            Responder::respondTooManyRequests("Too many {$this->camelCaseToSpaced($value_to_track)}s detected. You have been blocked for {$minutes} {$label}.", $block_window);
+            ErrorHandler::logAudit("{$rotationType} -> {$actor} blocked for {$value_to_track} rotation. Seen {$set_key_owner}s: {$count} (limit: {$max_count})");
 
             exit;
         }
     }
 
-    public function detectIpRotation() {
+    public function detectDeviceIdRotation(string $set_key_owner, string $value_to_track, string $ip, string $device_id, int $window = 300, int $max_ids = 5, int $block_window = 300): void {
+        $this->detectRotation($set_key_owner, $value_to_track, $ip, $device_id, $window, $max_ids, $block_window);
+    }
 
+    public function detectIpRotation(string $set_key_owner, string $value_to_track, string $ip, string $device_id, int $window = 900, int $max_ips = 3, int $block_window = 900): void {
+        $this->detectRotation($set_key_owner, $value_to_track, $ip, $device_id, $window, $max_ips, $block_window);
     }
 }

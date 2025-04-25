@@ -22,7 +22,6 @@ use Api\Gateways\TaskGateway;
 use Api\Services\Mailer;
 use Api\Services\Router;
 use Api\Services\RateLimiter;
-use Api\Services\Responder;
 use PHPMailer\PHPMailer\PHPMailer;
 
 set_error_handler([ErrorHandler::class, 'handleError']); // Convert all PHP warnings/notices into ErrorException
@@ -47,7 +46,8 @@ $router = new Router;
 
 // Handle device rotation
 $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']));
-$rateLimiter->detectDeviceIdRotation($_SERVER['REMOTE_ADDR'], InitApiUtils::getAndVerifyDeviceId());
+$rateLimiter->detectDeviceIdRotation('IP', 'deviceId', $_SERVER['REMOTE_ADDR'], InitApiUtils::getAndVerifyDeviceId());
+$rateLimiter->detectIpRotation('deviceId', 'IP', $_SERVER['REMOTE_ADDR'], InitApiUtils::getAndVerifyDeviceId());
 
 $router->add('/register', function() {
     InitApiUtils::handleRateLimit('register', 5);
