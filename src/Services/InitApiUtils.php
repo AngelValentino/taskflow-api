@@ -41,7 +41,7 @@ class InitApiUtils {
         $rateLimiter->detectRateLimit($_SERVER['REMOTE_ADDR'], self::getAndVerifyDeviceId(), $route, $window, $max_requests, $block_window);
     }
 
-    public static function handleAllowedOrigins() {
+    public static function handleAllowedOrigins(): void {
         $allowedOrigins = [
             'development' => explode(',', $_ENV['DEVELOPMENT_ORIGINS']),
             'production' => explode(',', $_ENV['PRODUCTION_ORIGINS'])
@@ -49,13 +49,12 @@ class InitApiUtils {
         
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
         
-        if (in_array($origin, $allowedOrigins[$_ENV['APP_ENV']])) {
-            header('Access-Control-Allow-Origin: ' . $origin);
-        } 
-        else {
+        if (!in_array($origin, $allowedOrigins[$_ENV['APP_ENV']])) {
             http_response_code(403);
             exit;
         }
+
+        header('Access-Control-Allow-Origin: ' . $origin);
     }
     
     public static function getUserAuthServices(): array {
