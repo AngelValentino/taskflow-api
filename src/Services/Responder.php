@@ -16,16 +16,14 @@ class Responder {
         echo json_encode(['message' => $message]);
     }
 
-    public static function respondLocked(string $message) {
-        http_response_code(423);
-        echo json_encode([
-            'message' => $message
-        ]);
-    }
-
     public static function respondUnprocessableEntity(array $errors):void {
         http_response_code(422);
         echo json_encode(['errors' => $errors]);
+    }
+
+    public static function respondConflict(string $message): void {
+        http_response_code(409);
+        echo json_encode(['message' => $message]);
     }
 
     public static function respondMethodNotAllowed(string $allowed_methods): void {

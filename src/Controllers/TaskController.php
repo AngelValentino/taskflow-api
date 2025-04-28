@@ -58,7 +58,7 @@ class TaskController {
                 $task_count = $this->task_gateway->getUserTaskCount($this->user_id, false);
 
                 if ($task_count >= 100) {
-                    Responder::respondLocked('Cannot create new tasks, the active task limit of 100 has been reached.');
+                    Responder::respondConflict('Cannot create new tasks, the active task limit of 100 has been reached.');
                     return;
                 }
 
