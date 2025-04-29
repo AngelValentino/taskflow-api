@@ -4,6 +4,7 @@ namespace Api\Controllers;
 
 use Api\Gateways\UserGateway;
 use Api\Services\Auth;
+use Api\Services\AuthFormValidation;
 use Api\Services\Mailer;
 use Api\Services\Responder;
 
@@ -12,7 +13,8 @@ class RecoverPasswordController {
         private string $client_url,
         private UserGateway $user_gateway,
         private Auth $auth,
-        private Mailer $mailer
+        private Mailer $mailer,
+        private AuthFormValidation $auth_form_validation
     ) {
         
     }
@@ -24,6 +26,12 @@ class RecoverPasswordController {
 
             if (!isset($email)) {
                 Responder::respondBadRequest('Email is required');
+                return;
+            }
+
+            $email_error = $this->auth_form_validation->getEmailValidationError(trim($email), false);
+            if ($email_error) {
+                Responder::respondUnprocessableEntity($email_error, true);
                 return;
             }
 

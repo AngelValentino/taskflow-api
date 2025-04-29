@@ -23,6 +23,7 @@ use Api\Services\Mailer;
 use Api\Services\Router;
 use Api\Services\RateLimiter;
 use Api\Services\Responder;
+use Api\Services\AuthFormValidation;
 use PHPMailer\PHPMailer\PHPMailer;
 
 set_error_handler([ErrorHandler::class, 'handleError']); // Convert all PHP warnings/notices into ErrorException
@@ -63,7 +64,8 @@ $router->add('/register', function() {
     $user_gateway = new UserGateway($database);
     $PHPMailer = new PHPMailer(true);
     $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD'], $_ENV['SENDER_USERNAME'], (int) $_ENV['SENDER_PORT']);
-    $register_controller = new RegisterController($user_gateway, $mailer);
+    $auth_form_validation = new AuthFormValidation($user_gateway);
+    $register_controller = new RegisterController($user_gateway, $mailer, $auth_form_validation);
     
     $register_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
@@ -104,7 +106,8 @@ $router->add('/recover-password', function() {
     $auth = new Auth($codec);
     $PHPMailer = new PHPMailer(true);
     $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD'], $_ENV['SENDER_USERNAME'], (int) $_ENV['SENDER_PORT']);
-    $recover_password_controller = new RecoverPasswordController($_ENV['APP_ENV'] === 'production' ? $_ENV['CLIENT_URL_PROD'] : $_ENV['CLIENT_URL_DEV'], $user_gateway, $auth, $mailer);
+    $auth_form_validation = new AuthFormValidation($user_gateway);
+    $recover_password_controller = new RecoverPasswordController($_ENV['APP_ENV'] === 'production' ? $_ENV['CLIENT_URL_PROD'] : $_ENV['CLIENT_URL_DEV'], $user_gateway, $auth, $mailer, $auth_form_validation);
     
     $recover_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
@@ -118,7 +121,8 @@ $router->add('/reset-password', function() {
     $auth = new Auth($codec);
     $PHPMailer = new PHPMailer(true);
     $mailer = new Mailer($PHPMailer, $_ENV['MAIL_HOST'], $_ENV['SENDER_EMAIL'], $_ENV['SENDER_PASSWORD'], $_ENV['SENDER_USERNAME'], (int) $_ENV['SENDER_PORT']);
-    $reset_password_controller = new ResetPasswordController($user_gateway, $auth, $mailer);
+    $auth_form_validation = new AuthFormValidation($user_gateway);
+    $reset_password_controller = new ResetPasswordController($user_gateway, $auth, $mailer, $auth_form_validation);
     
     $reset_password_controller->processRequest($_SERVER['REQUEST_METHOD']);
 });
