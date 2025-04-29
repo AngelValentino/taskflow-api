@@ -51,7 +51,19 @@ class AuthFormValidation {
         } 
         else if (strlen($password) > 75) {
             return 'Password cannot exceed 72 characters.';
-        } 
+        }
+        else if (preg_match('/\s/', $password)) {
+            return 'Password must not contain spaces.';
+        }
+        else if (!preg_match('/[a-z]/', $password)) {
+            return 'Password must contain at least one lowercase letter.';
+        }
+        else if (!preg_match('/[A-Z]/', $password)) {
+            return 'Password must contain at least one uppercase letter.';
+        }
+        else if (!preg_match('/\d/', $password)) {
+            return 'Password must contain at least one digit.';
+        }
 
         return null;
     }
