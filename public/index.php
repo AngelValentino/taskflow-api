@@ -54,7 +54,7 @@ $router = new Router;
 
 // Handle device rotation
 $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']));
-$rateLimiter->detectDeviceIdRotation('IP', 'deviceId', $_SERVER['REMOTE_ADDR'], InitApiUtils::getAndVerifyDeviceId());
+$rateLimiter->detectDeviceIdRotation('IP', 'deviceId', $_SERVER['REMOTE_ADDR'], InitApiUtils::getAndVerifyDeviceId(), 3000);
 $rateLimiter->detectIpRotation('deviceId', 'IP', $_SERVER['REMOTE_ADDR'], InitApiUtils::getAndVerifyDeviceId());
 
 $router->add('/register', function() {

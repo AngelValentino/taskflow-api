@@ -21,6 +21,9 @@ class RateLimiter {
             Responder::respondUnauthorized('Incorrect device id format found.');
             exit;
         }
+        
+        // We rely on the rotation window cache for expiry checks
+        // No need for additional expiry checks here since we're handling it with the window logic
     }
 
     // Generate the key for rate-limiting based on the route, device ID, and IP address
