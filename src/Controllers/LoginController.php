@@ -6,6 +6,7 @@ use Api\Gateways\RefreshTokenGateway;
 use Api\Gateways\UserGateway;
 use Api\Services\Auth;
 use Api\Services\Responder;
+use Api\Services\ErrorHandler;
 
 class LoginController {
     public function __construct(
@@ -21,8 +22,7 @@ class LoginController {
             $data = (array) json_decode(file_get_contents('php://input'), true);
 
             if (empty($data['email']) || empty($data['password'])) {
-                http_response_code(400);
-                echo json_encode(['message' => 'Missing login credentials.']);
+                Responder::respondBadRequest('Missing login credentials.');
                 return;
             }
     
@@ -53,12 +53,18 @@ class LoginController {
     }
 
     private function getUserValidationErrorMessage(array $data, array | false $user): ?string {
-        if ($user === false) {
-            return 'User does not exist.';
+        $dummyPassword = bin2hex(random_bytes(16)); // Random 32-char string
+        $dummyHash = password_hash($dummyPassword, PASSWORD_DEFAULT);
+        $inputPassword = $data['password'] ?? '';
+
+        // This should never happen due to the randomness of the dummy password
+        if ($user === false && password_verify($inputPassword, $dummyHash)) {
+            ErrorHandler::logAudit("RARE_EVENT -> IP {$_SERVER['REMOTE_ADDR']} - Input password matched dummy hash with no associated user");
+            return 'An unexpected error occurred. Please try again later.';
         }
 
-        if (!password_verify($data['password'], $user['password_hash'])) {
-            return 'Invalid password.';
+        if (!password_verify($inputPassword, $user === false ? $dummyHash : $user['password_hash'])) {
+            return 'The e-mail address or password is incorrect.';
         }
 
         return null;
