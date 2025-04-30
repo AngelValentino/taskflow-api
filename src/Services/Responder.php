@@ -41,6 +41,11 @@ class Responder {
         echo json_encode(['message' => $message]);
     }
 
+    public static function respondForbidden(string $message): void {
+        http_response_code(403);
+        echo json_encode(['message' => $message]);
+    }
+
     public static function respondUnauthorized($message): void {
         http_response_code(401);
         echo json_encode(['message' => $message]);

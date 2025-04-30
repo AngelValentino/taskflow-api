@@ -52,10 +52,22 @@ if (file_exists(__DIR__ . '/../maintenance.flag')) {
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $router = new Router;
 
+$origin_ip = $_SERVER['REMOTE_ADDR'];
+if ($_ENV['APP_ENV'] === 'development' && ($origin_ip !== '127.0.0.1' && $origin_ip !== '::1')) {
+    Responder::respondForbidden('Invalid IP address.');
+    ErrorHandler::logAudit("INVALID_IP -> IP {$origin_ip} was blocked in development environment");
+    exit;
+}
+else if ($_ENV['APP_ENV'] === 'production' && filter_var($origin_ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+    Responder::respondForbidden('Invalid IP address.');
+    ErrorHandler::logAudit("INVALID_IP -> IP {$origin_ip} was blocked in production environment");
+    exit;
+}
+
 // Handle device rotation
 $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']));
-$rateLimiter->detectDeviceIdRotation('IP', 'deviceId', $_SERVER['REMOTE_ADDR'], InitApiUtils::getAndVerifyDeviceId(), 3000);
-$rateLimiter->detectIpRotation('deviceId', 'IP', $_SERVER['REMOTE_ADDR'], InitApiUtils::getAndVerifyDeviceId());
+$rateLimiter->detectDeviceIdRotation('IP', 'deviceId', $origin_ip, InitApiUtils::getAndVerifyDeviceId(), 3000);
+$rateLimiter->detectIpRotation('deviceId', 'IP', $origin_ip, InitApiUtils::getAndVerifyDeviceId());
 
 $router->add('/register', function() {
     InitApiUtils::handleRateLimit('register', 5);
