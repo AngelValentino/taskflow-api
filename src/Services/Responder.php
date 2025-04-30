@@ -16,14 +16,9 @@ class Responder {
         echo json_encode(['message' => $message]);
     }
 
-    public static function respondUnprocessableEntity(array | string $errors, bool $single_err = false):void {
+    public static function respondUnprocessableEntity(array $errors): void {
         http_response_code(422);
-        if ($single_err) {
-            echo json_encode(['message' => $errors]);
-        } 
-        else {
-            echo json_encode(['errors' => $errors]);
-        }
+        echo json_encode(['errors' => $errors]);
     }
 
     public static function respondConflict(string $message): void {
