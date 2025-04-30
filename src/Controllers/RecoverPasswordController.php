@@ -7,6 +7,7 @@ use Api\Services\Auth;
 use Api\Services\AuthFormValidation;
 use Api\Services\Mailer;
 use Api\Services\Responder;
+use Api\Services\ErrorHandler;
 
 class RecoverPasswordController {
     public function __construct(
@@ -37,6 +38,12 @@ class RecoverPasswordController {
 
             $user = $this->user_gateway->getByEmail($email);
             
+            // Add a small random delay if no user exists, to prevent timing attacks
+            if (!$user) {
+                ErrorHandler::logAudit("PASSWORD_RECOVERY_ATTEMPT -> IP {$_SERVER['REMOTE_ADDR']} attempted recovery for non-existent email: {$email}");
+                usleep(rand(80000, 725000));
+            }
+
             // Always return the same response to avoid leaking user existence
             echo json_encode(['message' => "If the account exists, you will receive an email shortly. If you don't see it in your inbox, please check your spam or junk folder. If the email is there, kindly mark it as \"Not Spam\" to ensure you receive future messages from us."]);
 
