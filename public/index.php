@@ -67,7 +67,7 @@ else if ($_ENV['APP_ENV'] === 'production' && filter_var($origin_ip, FILTER_VALI
 // Handle device rotation
 $rateLimiter = new RateLimiter(new Redis($_ENV['REDIS_HOST'], $_ENV['REDIS_PORT']));
 $rateLimiter->detectDeviceIdRotation('IP', 'deviceId', $origin_ip, InitApiUtils::getAndVerifyDeviceId(), 3000);
-$rateLimiter->detectIpRotation('deviceId', 'IP', $origin_ip, InitApiUtils::getAndVerifyDeviceId());
+$rateLimiter->detectIpRotation('deviceId', 'IP', $origin_ip, InitApiUtils::getAndVerifyDeviceId(), 3000);
 
 $router->add('/register', function() {
     InitApiUtils::handleRateLimit('register', 5);
