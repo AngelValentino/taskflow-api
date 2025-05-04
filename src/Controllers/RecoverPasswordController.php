@@ -7,7 +7,6 @@ use Api\Services\Auth;
 use Api\Services\AuthFormValidation;
 use Api\Services\Mailer;
 use Api\Services\Responder;
-use Api\Services\ErrorHandler;
 
 class RecoverPasswordController {
     public function __construct(
@@ -40,7 +39,6 @@ class RecoverPasswordController {
             
             // Add a small random delay if no user exists, to prevent timing attacks
             if (!$user) {
-                ErrorHandler::logAudit("PASSWORD_RECOVERY_ATTEMPT -> IP {$_SERVER['REMOTE_ADDR']} attempted recovery for non-existent email: {$email}");
                 usleep(rand(80000, 725000));
             }
 

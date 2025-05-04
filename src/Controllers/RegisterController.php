@@ -6,6 +6,7 @@ use Api\Gateways\UserGateway;
 use Api\Services\AuthFormValidation;
 use Api\Services\Mailer;
 use Api\Services\Responder;
+use Api\Services\ErrorHandler;
 
 class RegisterController {
     public function __construct(
@@ -30,6 +31,7 @@ class RegisterController {
             $this->user_gateway->create($data['username'], $data['email'], $data['password']);
             $this->mailer->sendWelcomeEmail($data['email'], $data['username']);
 
+            ErrorHandler::logAudit("USER_CREATED -> IP {$_SERVER['REMOTE_ADDR']} | Email: {$data['email']} | Username: {$data['username']}");
             Responder::respondCreated('User created.');
         } 
         else {

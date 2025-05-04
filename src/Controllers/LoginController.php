@@ -57,6 +57,11 @@ class LoginController {
         $dummyHash = password_hash($dummyPassword, PASSWORD_DEFAULT);
         $inputPassword = $data['password'] ?? '';
 
+        // Add a small random delay if no user exists, to further prevent timing attacks
+        if ($user === false) {
+            usleep(rand(80000, 425000));
+        }
+
         // This should never happen due to the randomness of the dummy password
         if ($user === false && password_verify($inputPassword, $dummyHash)) {
             ErrorHandler::logAudit("RARE_EVENT -> IP {$_SERVER['REMOTE_ADDR']} - Input password matched dummy hash with no associated user");
