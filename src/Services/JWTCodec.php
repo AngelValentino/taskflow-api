@@ -32,7 +32,7 @@ class JWTCodec {
 
     public function decode(string $token): array {
         if (preg_match("/^(?<header>.+)\.(?<payload>.+)\.(?<signature>.+)$/", $token, $matches) !== 1) {
-            throw new InvalidArgumentException('invalid token format');
+            throw new InvalidArgumentException('Invalid token format.');
         }
 
         $signature = hash_hmac(
