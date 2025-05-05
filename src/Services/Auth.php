@@ -34,7 +34,7 @@ class Auth {
         } 
         catch (InvalidSignatureException) {
             http_response_code(401);
-            echo json_encode(['message' => 'Invalid signature.']);
+            echo json_encode(['message' => 'Invalid token signature.']);
             return false;
         }
         catch (TokenExpiredException) {

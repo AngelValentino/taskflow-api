@@ -20,6 +20,12 @@ class RegisterController {
     public function processRequest(string $method): void {
         if ($method === 'POST') {
             $data = (array) json_decode(file_get_contents('php://input'), true);
+            
+            $fields_to_trim = ['username', 'email', 'password', 'repeated_password'];
+
+            foreach ($fields_to_trim as $field) {
+                $data[$field] = trim($data[$field] ?? '');
+            }
 
             $errors = $this->getValidationErrors($data);
 
@@ -41,11 +47,11 @@ class RegisterController {
 
     private function getValidationErrors(array $data): array {
         $errors = [
-            'username' => $this->auth_form_validation->getUsernameValidationError($data['username'] ?? null),
-            'email' => $this->auth_form_validation->getEmailValidationError($data['email'] ?? null),
-            'password' => $this->auth_form_validation->getPasswordValidationError($data['password'] ?? null),
-            'repeated_password' => $this->auth_form_validation->getRepeatedPasswordValidationError($data['password'] ?? null, $data['repeated_password'] ?? null),
-            'terms' => isset($data['terms']) ? null : 'You must accept terms and conditions in order to register.'
+            'username' => $this->auth_form_validation->getUsernameValidationError($data['username']),
+            'email' => $this->auth_form_validation->getEmailValidationError($data['email']),
+            'password' => $this->auth_form_validation->getPasswordValidationError($data['password']),
+            'repeated_password' => $this->auth_form_validation->getRepeatedPasswordValidationError($data['password'], $data['repeated_password']),
+            'terms' => !empty($data['terms']) ? null : 'You must accept terms and conditions in order to register.'
         ];
 
         return array_filter($errors);

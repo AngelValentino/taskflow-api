@@ -43,10 +43,11 @@ class TaskController {
             else if ($method === 'POST') {
                 $data = (array) json_decode(file_get_contents('php://input'), true);
                 
-                // Trim inputs
-                $data['title'] = trim($data['title'] ?? '');
-                $data['due_date'] = trim($data['due_date'] ?? '');
-                $data['description'] = trim($data['description'] ?? '');
+                $fields_to_trim = ['title', 'due_date', 'description'];
+
+                foreach ($fields_to_trim as $field) {
+                    $data[$field] = trim($data[$field] ?? '');
+                }
 
                 $errors = $this->getValidationErrors($data);
                
@@ -99,7 +100,6 @@ class TaskController {
                 case 'PATCH':
                     $data = (array) json_decode(file_get_contents('php://input'), true);
 
-                    // Trim inputs
                     $data['title'] = array_key_exists('title', $data) ? trim($data['title']) : null;
                     $data['due_date'] = array_key_exists('due_date', $data) ? trim($data['due_date']) : null;
                     $data['description'] = array_key_exists('description', $data) ? trim($data['description']) : null;

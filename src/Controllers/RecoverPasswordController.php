@@ -22,14 +22,14 @@ class RecoverPasswordController {
     public function processRequest(string $method): void {
         if ($method === 'POST') {
             $data = json_decode(file_get_contents('php://input'), true);
-            $email = $data['email'];
+            $email = trim($data['email'] ?? '');
 
-            if (!isset($email)) {
-                Responder::respondBadRequest('Email is required');
+            if (empty($email)) {
+                Responder::respondBadRequest('Email address is required.');
                 return;
             }
 
-            $email_error = $this->auth_form_validation->getEmailValidationError(trim($email), false);
+            $email_error = $this->auth_form_validation->getEmailValidationError($email, false);
             if ($email_error) {
                 Responder::respondUnprocessableEntity(['email_error' => $email_error]);
                 return;

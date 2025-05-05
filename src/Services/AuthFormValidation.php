@@ -49,7 +49,7 @@ class AuthFormValidation {
         else if (strlen($password) < 8) {
             return 'Password must be at least 8 characters long.';
         } 
-        else if (strlen($password) > 75) {
+        else if (strlen($password) > 72) {
             return 'Password cannot exceed 72 characters.';
         }
         else if (preg_match('/\s/', $password)) {

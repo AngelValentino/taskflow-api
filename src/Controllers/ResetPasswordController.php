@@ -21,9 +21,14 @@ class ResetPasswordController {
     public function processRequest(string $method) {
         if ($method === 'POST') {
             $data = json_decode(file_get_contents('php://input'), true);
+            $fields_to_trim = ['token', 'password', 'repeated_password'];
 
-            if (!isset($data['token'])) {
-                Responder::respondBadRequest('Reset password token is required.');
+            foreach ($fields_to_trim as $field) {
+                $data[$field] = trim($data[$field] ?? '');
+            }
+
+            if (empty($data['token'])) {
+                Responder::respondBadRequest('Missing token.');
                 return;
             }
 
@@ -49,8 +54,8 @@ class ResetPasswordController {
 
     private function getValidationErrors(array $data): array {
         $errors = [
-            'password' => $this->auth_form_validation->getPasswordValidationError($data['password'] ?? null),
-            'repeated_password' => $this->auth_form_validation->getRepeatedPasswordValidationError($data['password'] ?? null, $data['repeated_password'] ?? null)
+            'password' => $this->auth_form_validation->getPasswordValidationError($data['password']),
+            'repeated_password' => $this->auth_form_validation->getRepeatedPasswordValidationError($data['password'], $data['repeated_password'])
         ];
 
         return array_filter($errors);

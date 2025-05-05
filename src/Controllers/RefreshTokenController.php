@@ -19,6 +19,7 @@ class RefreshTokenController {
     public function processRequest(string $method): void {
         if ($method === 'POST') {
             $data = (array) json_decode(file_get_contents('php://input'), true);
+            $data['token'] = trim($data['token'] ?? '');
 
             if (empty($data['token'])) {
                 Responder::respondBadRequest('Missing token.');

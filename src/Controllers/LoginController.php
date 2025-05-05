@@ -20,6 +20,11 @@ class LoginController {
     public function processRequest(string $method): void {
         if ($method === 'POST') {
             $data = (array) json_decode(file_get_contents('php://input'), true);
+            $fields_to_trim = ['email', 'password'];
+
+            foreach ($fields_to_trim as $field) {
+                $data[$field] = trim($data[$field] ?? '');
+            }
 
             if (empty($data['email']) || empty($data['password'])) {
                 Responder::respondBadRequest('Missing login credentials.');
