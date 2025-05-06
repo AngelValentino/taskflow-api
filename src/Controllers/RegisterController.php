@@ -35,9 +35,10 @@ class RegisterController {
             }
 
             $this->user_gateway->create($data['username'], $data['email'], $data['password']);
-            $this->mailer->sendWelcomeEmail($data['email'], $data['username']);
-
             ErrorHandler::logAudit("USER_CREATED -> IP {$_SERVER['REMOTE_ADDR']} | Email: {$data['email']} | Username: {$data['username']}");
+            
+            $this->mailer->sendWelcomeEmail($data['email'], $data['username']);
+            
             Responder::respondCreated('User created.');
         } 
         else {
