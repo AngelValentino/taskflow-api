@@ -39,7 +39,7 @@ class ResetPasswordController {
                 return;
             }
 
-            if (!$this->auth->authenticateAccessToken(false, $data['token'], 'reset')) return;
+            if (!$this->auth->authenticateAccessToken(false, $data['token'], 'reset-password')) return;
             $user_id = $this->auth->getUserId();
             $user_email = $this->auth->getUserEmail();
             

@@ -87,9 +87,9 @@ class Auth {
     public function getRecoverPasswordToken($user): string {
         $payload = [
             'sub' => $user['id'],
-            'exp' => time() + 900, // 15 min expiry
+            'exp' => time() + 600, // 10 min expiry
             'email' => $user['email'],
-            'type' => 'reset'
+            'type' => 'reset-password'
         ];
 
         $reset_token = $this->codec->encode($payload);
