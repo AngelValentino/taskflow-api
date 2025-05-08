@@ -25,6 +25,7 @@ class Auth {
     public function authenticateAccessToken(bool $header = true, string $token = null, string $expected_type = null): bool {
         if (!preg_match("/^Bearer\s+(.*)$/", $_SERVER['HTTP_AUTHORIZATION'], $matches) && $header === true) {
             http_response_code(400);
+            ErrorHandler::logAudit("MISSING_AUTH_HEADER -> IP {$_SERVER['REMOTE_ADDR']} sent a request with an incomplete authorization header.");
             echo json_encode(['message' => 'Incomplete authorization header.']);
             return false;
         }
@@ -34,7 +35,8 @@ class Auth {
         } 
         catch (InvalidSignatureException) {
             http_response_code(401);
-            echo json_encode(['message' => 'Invalid token signature.']);
+            ErrorHandler::logAudit("INVALID_TOKEN_SIGNATURE -> IP {$_SERVER['REMOTE_ADDR']} tried using a token with an invalid signature");            
+            echo json_encode(['message' => 'Invalid token format.']);
             return false;
         }
         catch (TokenExpiredException) {
@@ -44,13 +46,15 @@ class Auth {
         }
         catch (Exception $e) {
             http_response_code(400);
+            ErrorHandler::logAudit("INVALID_TOKEN -> IP {$_SERVER['REMOTE_ADDR']} tried using an invalid token");
             echo json_encode(['message' => $e->getMessage()]);
             return false;
         }
 
         if ($expected_type !== null && (($payload['type'] ?? null) !== $expected_type)) {
             http_response_code(400);
-            echo json_encode(['message' => 'Invalid token type.']);
+            ErrorHandler::logAudit("INVALID_TOKEN_TYPE -> IP {$_SERVER['REMOTE_ADDR']} tried using an invalid token type");
+            echo json_encode(['message' => 'Invalid token format.']);
             return false;
         }
      
