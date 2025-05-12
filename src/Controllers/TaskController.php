@@ -18,7 +18,7 @@ class TaskController {
         if ($task_id === null) {
             if ($method === 'GET') {
                 $is_completed = $_GET['completed'] ?? null;
-                $is_counter = $is_counter = filter_var($_GET['counter'] ?? null, FILTER_VALIDATE_BOOLEAN);
+                $is_counter = filter_var($_GET['counter'] ?? null, FILTER_VALIDATE_BOOLEAN);
                 $search_value = isset($_GET['title']) ? trim($_GET['title']) : null;
 
                 if ($is_completed !== null) {
@@ -64,7 +64,7 @@ class TaskController {
                 }
 
                 $task_id = $this->task_gateway->createForUser($this->user_id, $data);
-                Responder::respondCreated("Task with ID: $task_id created");
+                Responder::respondCreated('Task created.');
             }
             else if ($method === 'DELETE') {
                 $is_completed = $_GET['completed'] ?? null;
@@ -83,7 +83,7 @@ class TaskController {
             $task = $this->task_gateway->getForUser($this->user_id, $task_id);
 
             if ($task === false) {
-                Responder::respondNotFound("Task with ID: $task_id not found");
+                Responder::respondNotFound('Task not found.');
                 return;
             }
 

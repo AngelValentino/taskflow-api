@@ -13,7 +13,9 @@ class TaskGateway {
     }
 
     public function getAllForUser(int $user_id, ?bool $is_completed, ?string $search_value): array {
-        $sql = "SELECT * FROM tasks WHERE user_id = :user_id";
+        $sql = "SELECT `id`, `title`, `due_date`, `description`, `is_completed` 
+                FROM tasks 
+                WHERE user_id = :user_id";
 
         if ($is_completed !== null) {
             $sql .= $is_completed ? " AND is_completed = 1" : " AND is_completed = 0";
@@ -41,15 +43,12 @@ class TaskGateway {
     }
 
     public function getUserTaskCount(int $user_id, ?bool $is_completed): int {
-        $sql = "SELECT COUNT(*) as user_task_count FROM tasks WHERE user_id = :user_id";
+        $sql = "SELECT COUNT(*) as user_task_count 
+                FROM tasks 
+                WHERE user_id = :user_id";
 
         if ($is_completed !== null) {
-            if ($is_completed === false) {
-                $sql .= ' AND is_completed = 0';
-            } 
-            else if ($is_completed === true) {
-                $sql .= ' AND is_completed = 1';
-            }
+            $sql .= $is_completed ? " AND is_completed = 1" : " AND is_completed = 0";
         } 
 
         $stmt = $this->conn->prepare($sql);  
@@ -61,7 +60,8 @@ class TaskGateway {
     }
 
     public function getForUser(int $user_id, string $task_id): array | false {
-        $sql = "SELECT * FROM tasks 
+        $sql = "SELECT `id`, `title`, `due_date`, `description`, `is_completed` 
+                FROM tasks 
                 WHERE id = :task_id AND user_id = :user_id";
        
         $stmt = $this->conn->prepare($sql);  

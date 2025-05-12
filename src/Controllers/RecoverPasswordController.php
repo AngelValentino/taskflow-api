@@ -31,7 +31,7 @@ class RecoverPasswordController {
 
             $email_error = $this->auth_form_validation->getEmailValidationError($email, false);
             if ($email_error) {
-                Responder::respondUnprocessableEntity(['email_error' => $email_error]);
+                Responder::respondUnprocessableEntity(['email' => $email_error]);
                 return;
             }
 

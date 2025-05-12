@@ -13,7 +13,7 @@ class QuoteGateway {
     }
 
     public function getAllQuotes(): array {
-        $sql = "SELECT * FROM quotes";
+        $sql = "SELECT `quote`, `author` FROM quotes";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
