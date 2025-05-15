@@ -1,4 +1,4 @@
-# TaskFlow API
+# 🚀 TaskFlow API
 
 This repository contains the backend RESTful API for [TaskFlow](https://taskflowapp.net/), a minimalist productivity web app focused on task management and user productivity.
 
@@ -7,7 +7,7 @@ Built in pure PHP with an object-oriented MVC architecture, the API handles secu
 > For the full client-side application, including the user interface and detailed documentation, please visit the [TaskFlow client repository](https://github.com/AngelValentino/TaskFlow).
 
 
-## Features and Security
+## 🛡️ Features and Security
 
 - Secure JWT-based authentication and token refresh with robust token management  
 - Rate limiting powered by Redis to prevent abuse and mitigate brute-force attacks  
@@ -20,6 +20,6 @@ Built in pure PHP with an object-oriented MVC architecture, the API handles secu
 Despite best efforts and adherence to industry best practices, no web application can guarantee 100% security due to inherent platform limitations and constantly evolving threats; ongoing vigilance and improvements remain essential.
 
 
-## Getting Started
+## 🛫 Getting Started
 
 Please refer to the [client repository](https://github.com/AngelValentino/TaskFlow) for detailed setup instructions and usage examples.
