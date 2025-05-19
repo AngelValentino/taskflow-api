@@ -14,7 +14,6 @@ class Mailer {
         string $sender_username,
         int $sender_port 
     ) {
-        
         // SMTP configuration
         $this->mail->isSMTP();
         $this->mail->Host = $mail_host;
