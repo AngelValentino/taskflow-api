@@ -48,7 +48,7 @@ class Mailer {
                         <p style='color:#3c4043;'>If the button above doesn't work, copy and paste this link into your browser:</p>
                         <p style='word-break:break-all;color:#5f6368;'>{$resetLink}</p>
                         <p style='color:#3c4043;'>If you didn't request this, you can ignore this email or contact our support team.</p>
-                        <p style='color:#3c4043;'>This link will expire in 15 minutes.</p>
+                        <p style='color:#3c4043;'>This link will expire in 10 minutes.</p>
                         <br>
                         <p style='color:#3c4043;'>— The TaskFlow Team</p>
                     </div>
@@ -60,7 +60,7 @@ class Mailer {
                 </div>
             ";
 
-            $this->mail->AltBody = "Hi,\n\nYou recently requested to reset your password. Click the link below to proceed:\n$resetLink\n\nIf the link above doesn't work, copy and paste it into your browser.\n\nThis link will expire in 15 minutes.\n\nIf you didn't request this, you can ignore this email or contact support.\n\n— The TaskFlow Team\ninfo.taskflowapp@gmail.com";
+            $this->mail->AltBody = "Hi,\n\nYou recently requested to reset your password. Click the link below to proceed:\n$resetLink\n\nIf the link above doesn't work, copy and paste it into your browser.\n\nThis link will expire in 10 minutes.\n\nIf you didn't request this, you can ignore this email or contact support.\n\n— The TaskFlow Team\ninfo.taskflowapp@gmail.com";
 
             $this->mail->send();
         } 
